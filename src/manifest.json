@@ -5,7 +5,12 @@
   "versionName": "1.0.0",
   "versionCode": "100",
   "transformPx": false,
-
+  "networkTimeout": {
+    "request": 600000,
+    "connectSocket": 600000,
+    "uploadFile": 600000,
+    "downloadFile": 600000
+  },
   "app-plus": {
     "usingComponents": true,
     "nvueStyleCompiler": "uni-app",
@@ -43,11 +48,25 @@
   },
   "quickapp": {},
   "mp-weixin": {
-    "appid": "",
+    "appid": "wx4fdbdd22e53b3885",
     "setting": {
-      "urlCheck": false
+      "urlCheck": false,
+      "minified": true
     },
-    "usingComponents": true
+    "usingComponents": true,
+    "requiredBackgroundModes": ["audio"],
+    "requiredPrivateInfos": ["getLocation"],
+    "permission": {
+      "scope.userLocation": {
+        "desc": "您的位置信息将用于小程序位置效果展示"
+      }
+    },
+    "networkTimeout": {
+      "request": 600000,
+      "connectSocket": 600000,
+      "uploadFile": 600000,
+      "downloadFile": 600000
+    }
   },
   "mp-alipay": {
     "usingComponents": true

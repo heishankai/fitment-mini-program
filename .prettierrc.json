@@ -1,1 +1,9 @@
-{"singleQuote":true,"semi":false,"printWidth":100,"trailingComma":"all","endOfLine":"auto"}
+{
+  "singleQuote": true,
+  "semi": false,
+  "printWidth": 100,
+  "trailingComma": "all",
+  "endOfLine": "auto",
+  "vueIndentScriptAndStyle": false,
+  "htmlWhitespaceSensitivity": "ignore"
+}

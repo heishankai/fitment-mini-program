@@ -9,7 +9,6 @@
 
 <script setup lang="ts">
 const title = ref<string>('Hello')
-
 </script>
 
 <style>
