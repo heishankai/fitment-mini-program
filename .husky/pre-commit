@@ -1,8 +1,8 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-# TypeScript 类型检查
-pnpm run type-check
+# TypeScript 类型检查（使用 npx 避免 pnpm engines 校验导致 VSCode 提交失败）
+npx --no-install vue-tsc --noEmit
 
 # ESLint 校验（与 fitment-wechat 一致：使用 -- 分隔 npx 参数）
 npx --no-install -- lint-staged
