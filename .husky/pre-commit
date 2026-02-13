@@ -1,4 +1,8 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-npx --no-install lint-staged
+# TypeScript 类型检查
+pnpm run type-check
+
+# ESLint 校验（与 fitment-wechat 一致：使用 -- 分隔 npx 参数）
+npx --no-install -- lint-staged

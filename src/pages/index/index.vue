@@ -10,7 +10,7 @@
 <script setup lang="ts">
 const title = ref<string>('Hello')
 const handleClick = () => {
-  title.value = 'Hello World1'
+  title.value = 'Hello World12'
 }
 </script>
 
