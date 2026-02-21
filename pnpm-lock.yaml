@@ -56,6 +56,12 @@ importers:
       '@dcloudio/uni-quickapp-webview':
         specifier: 3.0.0-4080420251103001
         version: 3.0.0-4080420251103001(postcss@8.5.6)(rollup@4.57.1)(vue@3.5.28(typescript@4.9.5))
+      '@dcloudio/uni-ui':
+        specifier: ^1.5.11
+        version: 1.5.11
+      dayjs:
+        specifier: ^1.11.19
+        version: 1.11.19
       pinia:
         specifier: 2.0.27
         version: 2.0.27(typescript@4.9.5)(vue@3.5.28(typescript@4.9.5))
@@ -946,6 +952,9 @@ packages:
 
   '@dcloudio/uni-stat@3.0.0-4080420251103001':
     resolution: {integrity: sha512-CCADC5plW/etPbhORExii2pJ6m337YeHB+V1R7w6JBmFdGqqYj7+3Vq24wWSSECc4hpiZFLk3dNzu5/NNw2p1Q==}
+
+  '@dcloudio/uni-ui@1.5.11':
+    resolution: {integrity: sha512-DBtk046ofmeFd82zRI7d89SoEwrAxYzUN3WVPm1DIBkpLPG5F5QDNkHMnZGu2wNrMEmGBjBpUh3vqEY1L3jaMw==}
 
   '@dcloudio/vite-plugin-uni@3.0.0-4080420251103001':
     resolution: {integrity: sha512-r9UOGDrHqvOV2p9IW+4wql8BJJjKgPRWH9Y0rkztp7GjvtUqCkkoVwlh5sJXYwqPNZL5JWPuj0Cl+ZtTg1njyw==}
@@ -2401,6 +2410,9 @@ packages:
   data-urls@2.0.0:
     resolution: {integrity: sha512-X5eWTSXO/BJmpdIKCRuKUgSCgAN0OwliVK3yPKbwIWU1Tdw5BRajxlzMidvh+gwko9AfQ9zIj52pzF91Q3YAvQ==}
     engines: {node: '>=10'}
+
+  dayjs@1.11.19:
+    resolution: {integrity: sha512-t5EcLVS6QPBNqM2z8fakk/NKel+Xzshgt8FFKAn+qwlD1pzZWxh0nVCrvFK7ZDb6XucZeF9z8C7CBWTRIVApAw==}
 
   de-indent@1.0.2:
     resolution: {integrity: sha512-e/1zu3xH5MQryN2zdVaF0OrdNLUbvWxzMbi+iNA6Bky7l1RoP8a2fIbRocyHclXt/arDrrR6lL3TqFD9pMQTsg==}
@@ -6125,6 +6137,8 @@ snapshots:
       - ts-node
       - vue
 
+  '@dcloudio/uni-ui@1.5.11': {}
+
   '@dcloudio/vite-plugin-uni@3.0.0-4080420251103001(postcss@8.5.6)(rollup@4.57.1)(vite@5.2.8(@types/node@25.2.3)(sass@1.97.3)(terser@5.46.0))(vue@3.5.28(typescript@4.9.5))':
     dependencies:
       '@babel/core': 7.25.2
@@ -7793,6 +7807,8 @@ snapshots:
       abab: 2.0.6
       whatwg-mimetype: 2.3.0
       whatwg-url: 8.7.0
+
+  dayjs@1.11.19: {}
 
   de-indent@1.0.2: {}
 

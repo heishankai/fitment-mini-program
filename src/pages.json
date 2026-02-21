@@ -1,16 +1,232 @@
 {
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+    }
+  },
   "pages": [
     {
-      "path": "pages/index/index",
+      "path": "pages/welcome/index",
       "style": {
-        "navigationBarTitleText": "uni-app"
+        "navigationBarTitleText": "欢迎",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "首页",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/labour-cost/index",
+      "style": {
+        "navigationBarTitleText": "工价",
+        "navigationStyle": "custom",
+        "disableScroll": true
+      }
+    },
+    {
+      "path": "pages/auxiliary-material/index",
+      "style": {
+        "navigationBarTitleText": "辅材",
+        "navigationStyle": "custom",
+        "disableScroll": true
+      }
+    },
+    {
+      "path": "pages/mine/index",
+      "style": {
+        "navigationBarTitleText": "个人中心",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
       }
     }
   ],
+  "subPackages": [
+    {
+      "root": "package-home",
+      "pages": [
+        {
+          "path": "stores/index",
+          "style": {
+            "navigationBarTitleText": "探索门店"
+          }
+        },
+        {
+          "path": "platform-intro/index",
+          "style": {
+            "navigationBarTitleText": "平台介绍"
+          }
+        },
+        {
+          "path": "construction-guarantee/index",
+          "style": {
+            "navigationBarTitleText": "施工保障"
+          }
+        },
+        {
+          "path": "material-transparency/index",
+          "style": {
+            "navigationBarTitleText": "材料透明说明"
+          }
+        },
+        {
+          "path": "schedule-tracking/index",
+          "style": {
+            "navigationBarTitleText": "工期管理说明"
+          }
+        }
+      ]
+    },
+    {
+      "root": "package-auxiliary-material",
+      "pages": [
+        {
+          "path": "material-search/index",
+          "style": {
+            "navigationBarTitleText": "搜索材料",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "material-detail/index",
+          "style": {
+            "navigationBarTitleText": "材料详情"
+          }
+        },
+        {
+          "path": "product-detail/index",
+          "style": {
+            "navigationBarTitleText": "辅材详情",
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "root": "package-labor-cost",
+      "pages": [
+        {
+          "path": "labor-price-detail/index",
+          "style": {
+            "navigationBarTitleText": "工价详情",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "labor-price-search/index",
+          "style": {
+            "navigationBarTitleText": "搜索工价"
+          }
+        },
+        {
+          "path": "service-request/index",
+          "style": {
+            "navigationBarTitleText": "填写服务需求",
+            "disableScroll": true
+          }
+        }
+      ]
+    },
+    {
+      "root": "package-mine",
+      "pages": [
+        {
+          "path": "customer-service/index",
+          "style": {
+            "navigationBarTitleText": "联系客服",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "after-sale/index",
+          "style": {
+            "navigationBarTitleText": "售后",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "message-list/index",
+          "style": {
+            "navigationBarTitleText": "消息列表",
+            "disableScroll": true
+          }
+        }
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/home/index": {
+      "network": "all",
+      "packages": [
+        "package-home"
+      ]
+    },
+    "pages/labour-cost/index": {
+      "network": "all",
+      "packages": [
+        "package-labor-cost"
+      ]
+    },
+    "pages/auxiliary-material/index": {
+      "network": "all",
+      "packages": [
+        "package-auxiliary-material"
+      ]
+    },
+    "pages/mine/index": {
+      "network": "all",
+      "packages": [
+        "package-mine"
+      ]
+    }
+  },
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "uni-app",
-    "navigationBarBackgroundColor": "#F8F8F8",
+    "navigationBarBackgroundColor": "#FFFFFF",
     "backgroundColor": "#F8F8F8"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#C8BFBF",
+    "selectedColor": "#151515",
+    "borderStyle": "white",
+    "backgroundColor": "#FFFFFF",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home-active.png",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/labour-cost/index",
+        "iconPath": "static/tabbar/labour-cost.png",
+        "selectedIconPath": "static/tabbar/labour-cost-active.png",
+        "text": "工价"
+      },
+      {
+        "pagePath": "pages/auxiliary-material/index",
+        "iconPath": "static/tabbar/auxiliary-material.png",
+        "selectedIconPath": "static/tabbar/auxiliary-material-active.png",
+        "text": "辅材"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "iconPath": "static/tabbar/mine.png",
+        "selectedIconPath": "static/tabbar/mine-active.png",
+        "text": "个人中心"
+      }
+    ]
   }
 }
