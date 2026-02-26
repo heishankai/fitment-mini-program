@@ -74,7 +74,8 @@ export const request = <T>(options: UniApp.RequestOptions): Promise<Data<T>> => 
         reject(res)
       },
       fail(err) {
-        uni.hideLoading()
+        // 注意：request 本身不展示 loading，故不调用 hideLoading，
+        // 否则在无 loading 时会报 "hideLoading:fail toast can't be found"
         uni.showToast({ icon: 'none', title: '网络错误，换个网络试试' })
         reject(err)
       },

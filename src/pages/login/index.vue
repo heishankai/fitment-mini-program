@@ -45,7 +45,7 @@
         </view>
 
         <!-- Terms -->
-        <view class="terms">
+        <view class="terms" @tap="goToPrivacy">
           <text class="terms-text">登录即代表同意</text>
           <text class="terms-link">《用户协议》</text>
           <text class="terms-text">和</text>
@@ -64,6 +64,10 @@ const features = [
   { text: '价格透明，无隐形消费' },
   { text: '售后保障，平台兜底' },
 ]
+
+const goToPrivacy = (): void => {
+  uni.navigateTo({ url: '/package-mine/privacy-policy/index' })
+}
 
 const handlePhoneLogin = async (e: any): Promise<void> => {
   const { code: phoneCode, errMsg } = e?.detail ?? {}

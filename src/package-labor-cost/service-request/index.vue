@@ -255,7 +255,7 @@ onLoad(async (options) => {
 
   if (work_kind_name && id) {
     formData.value.work_kind_name = decodeURIComponent(work_kind_name)
-    formData.value.id = id
+    formData.value.work_kind_id = id
   }
   await initLocation()
 })

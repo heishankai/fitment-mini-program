@@ -179,7 +179,7 @@ const advantagesList = [
 ]
 
 const handleQuote = (): void => {
-  uni.showToast({ title: '敬请期待', icon: 'none' })
+  uni.navigateTo({ url: '/package-home/renovation-form/index' })
 }
 
 const handleLabourCost = (): void => {
@@ -269,6 +269,7 @@ const handleLabourCost = (): void => {
     letter-spacing: 0.15em;
     margin-bottom: 8rpx;
   }
+
   .keyword-zh {
     font-size: 30rpx;
     color: $uni-text-color;

@@ -39,7 +39,7 @@
             </view>
           </view>
 
-          <view v-else-if="!loading" class="empty-tip">
+          <view v-else-if="!loading" class="no-more-tip">
             <text class="empty-text">暂无相关材料</text>
           </view>
 

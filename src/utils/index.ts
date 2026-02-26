@@ -106,6 +106,7 @@ export const getUserLocation = async (): Promise<{
               content: '需要获取您的位置信息，请在设置中开启位置权限',
               showCancel: true,
               confirmText: '去设置',
+              confirmColor: '#2d635e',
               success: (modalRes) => {
                 if (modalRes.confirm) {
                   wx.openSetting()

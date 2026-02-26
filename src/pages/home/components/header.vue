@@ -10,7 +10,7 @@
     <navbar class="hero-navbar" :scroll-top="scrollTop">
       <template #left>
         <view class="nav-location" @tap="handleStores">
-          <view class="icon-map-pin" />
+          <uni-icons type="location" size="16" color="#2D635E" />
           <text class="city-text">{{ city }}</text>
         </view>
       </template>
@@ -37,7 +37,7 @@
       <view class="segment-item" @tap="handleQuote">
         <view class="segment-en">QUOTE</view>
         <view class="segment-title">装修报价</view>
-        <view class="segment-desc">马上获取报价</view>
+        <view class="segment-desc">免费获取报价</view>
       </view>
 
       <view class="divider" />
@@ -55,7 +55,7 @@
 import navbar from './navbar.vue'
 
 // 品牌信息
-const city = '嘉兴'
+const city = '附近门店'
 const brandSubtitle = '空间美学 · 品质装修'
 const brandTitle = '智惠装'
 
@@ -69,7 +69,7 @@ const handleStores = (): void => {
 }
 
 const handleQuote = (): void => {
-  uni.showToast({ title: '装修报价', icon: 'none' })
+  uni.navigateTo({ url: '/package-home/renovation-form/index' })
 }
 
 const handleFind = (): void => {
@@ -128,15 +128,6 @@ $segment-card-radius: 32rpx;
   display: flex;
   align-items: center;
   gap: 12rpx;
-}
-
-.icon-map-pin {
-  width: 32rpx;
-  height: 32rpx;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232D635E' stroke-width='2'%3E%3Cpath d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3C/svg%3E");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
 }
 
 .city-text {

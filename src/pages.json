@@ -84,6 +84,14 @@
           "style": {
             "navigationBarTitleText": "工期管理说明"
           }
+        },
+        {
+          "path": "renovation-form/index",
+          "style": {
+            "navigationBarTitleText": "装修报价",
+            "navigationStyle": "custom",
+            "disableScroll": true
+          }
         }
       ]
     },
@@ -158,6 +166,47 @@
           "path": "message-list/index",
           "style": {
             "navigationBarTitleText": "消息列表",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "privacy-policy/index",
+          "style": {
+            "navigationBarTitleText": "隐私条款"
+          }
+        },
+        {
+          "path": "orders/index",
+          "style": {
+            "navigationBarTitleText": "全部项目",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "order-detail/index",
+          "style": {
+            "navigationBarTitleText": "订单详情",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "craftsman-service/index",
+          "style": {
+            "navigationBarTitleText": "联系工匠",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "work-price-materials/index",
+          "style": {
+            "navigationBarTitleText": "辅材清单",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "construction-progress/index",
+          "style": {
+            "navigationBarTitleText": "施工进度",
             "disableScroll": true
           }
         }

@@ -2,10 +2,10 @@
   <view class="container">
     <scroll-view class="scroll-view" scroll-y>
       <!-- 顶部品牌区 -->
-      <mine-header :points="0" :userInfo="userInfo" />
+      <mine-header :points="orderCount" :userInfo="userInfo" />
 
       <!-- 我的装修（核心区域） -->
-      <mine-renovation />
+      <mine-renovation :order-list="orderList" />
 
       <!-- 施工保障 -->
       <view class="section guarantee-section" @tap="goToGuarantee">
@@ -21,7 +21,7 @@
       </view>
 
       <!-- 我的优惠 -->
-      <view class="section coupon-section" @tap="goToCoupons">
+      <!-- <view class="section coupon-section" @tap="goToCoupons">
         <view class="coupon-row">
           <view class="coupon-left">
             <uni-icons type="gift" size="16" color="#1E2222" />
@@ -32,7 +32,7 @@
             <uni-icons type="right" size="14" color="#D0D5D5" />
           </view>
         </view>
-      </view>
+      </view> -->
 
       <!-- 服务支持 -->
       <mine-support @message-list="goToMessageList" @material-tracking="goToMaterialTracking"
@@ -72,12 +72,29 @@ import CustomTabBar from '@/components/custom-tab-bar.vue'
 import MineHeader from './components/mine-header.vue'
 import MineRenovation from './components/mine-renovation.vue'
 import MineSupport from './components/mine-support.vue'
+import { getOrderListService } from '@/api/order'
 
 const userInfo = ref<any>({})
+const orderList = ref<any[]>([])
+const orderCount = computed(() => orderList.value.length)
 
-// 页面显示时加载用户信息
+// 加载订单列表
+const loadOrderList = async (): Promise<void> => {
+  try {
+    const res = await getOrderListService()
+    const ok = res?.success === true || res?.code === 200 || res?.code === '0'
+    const raw = res?.data ?? res
+    const list = Array.isArray(raw) ? raw : raw?.list ?? []
+    orderList.value = ok ? list : []
+  } catch {
+    orderList.value = []
+  }
+}
+
+// 页面显示时加载用户信息和订单
 onShow(() => {
   loadUserInfo()
+  loadOrderList()
 })
 
 // 加载用户信息
@@ -86,7 +103,6 @@ const loadUserInfo = (): void => {
   if (data) {
     userInfo.value = { ...data }
   }
-  console.log(data, 'userInfo')
 }
 
 // 登录/登出统一入口（点击时根据当前状态决定）
@@ -95,7 +111,7 @@ const handleAuthAction = (): void => {
     wx.showModal({
       title: '退出登录',
       content: '确定要退出登录吗？',
-      confirmColor: '#2d635e', // 主题色
+      confirmColor: '#2d635e',
       success: ({ confirm }) => {
         if (!confirm) return
         wx.removeStorageSync('userInfo')
@@ -113,9 +129,9 @@ const goToGuarantee = (): void => {
   uni.navigateTo({ url: '/package-home/construction-guarantee/index' })
 }
 
-const goToCoupons = (): void => {
-  uni.showToast({ title: '敬请期待', icon: 'none' })
-}
+// const goToCoupons = (): void => {
+//   uni.showToast({ title: '敬请期待', icon: 'none' })
+// }
 
 const goToMessageList = (): void => {
   uni.navigateTo({ url: '/package-mine/message-list/index' })
@@ -134,7 +150,7 @@ const callService = (): void => {
 }
 
 const goToPrivacy = (): void => {
-  uni.showToast({ title: '敬请期待', icon: 'none' })
+  uni.navigateTo({ url: '/package-mine/privacy-policy/index' })
 }
 </script>
 

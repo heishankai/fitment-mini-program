@@ -9,7 +9,7 @@
       </view>
     </view>
 
-    <text class="empty-tip">当前没有装修项目</text>
+    <!-- <text class="empty-tip">当前没有装修项目</text> -->
 
     <view class="feature-grid">
       <view class="grid-item" @tap="handleMySite">
@@ -35,12 +35,23 @@
 </template>
 
 <script setup lang="ts">
+const props = defineProps<{ orderList?: any[] }>()
+
 const handleAllProjects = (): void => {
-  uni.showToast({ title: '敬请期待', icon: 'none' })
+  uni.navigateTo({ url: '/package-mine/orders/index' })
 }
 
 const handleMySite = (): void => {
-  uni.showToast({ title: '敬请期待', icon: 'none' })
+  const firstConstruction = (props.orderList ?? []).find(
+    (o: any) => Number(o.order_status) === 2,
+  )
+  if (firstConstruction?.id) {
+    uni.navigateTo({
+      url: `/package-mine/order-detail/index?id=${firstConstruction.id}`,
+    })
+  } else {
+    uni.navigateTo({ url: '/package-mine/orders/index' })
+  }
 }
 
 const handleAfterSale = (): void => {
@@ -81,10 +92,10 @@ const handleAfterSale = (): void => {
       }
     }
 
-    .empty-tip {
-      font-size: 26rpx;
-      color: $uni-text-color-placeholder;
-    }
+    // .empty-tip {
+    //   font-size: 26rpx;
+    //   color: $uni-text-color-placeholder;
+    // }
 
     .feature-grid {
       display: flex;
