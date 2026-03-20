@@ -32,11 +32,11 @@ const items = [
     label: '材料透明说明',
     icon: 'icon-zanwushuju',
   },
-  {
-    type: 'schedule',
-    label: '工期准时保障',
-    icon: 'icon-a-ziyuan672',
-  },
+  // {
+  //   type: 'schedule',
+  //   label: '工期准时保障',
+  //   icon: 'icon-a-ziyuan672',
+  // },
   {
     type: 'messageList',
     label: '消息列表',

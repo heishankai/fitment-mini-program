@@ -2,11 +2,9 @@
   <view class="splash-page">
     <!-- Background -->
     <view class="bg-wrap">
-      <image
-        class="bg-image"
+      <image class="bg-image"
         src="https://din-dang-zhi-zhuang.oss-cn-hangzhou.aliyuncs.com/uploads/1771654019255_uagb3l_photo-1765371514288-56aea621fbb1.jpeg"
-        mode="aspectFill"
-      />
+        mode="aspectFill" />
       <view class="bg-overlay" />
     </view>
 
@@ -51,7 +49,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 
-const countdown = ref(5)
+const countdown = ref(2)
 let timer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
@@ -104,12 +102,10 @@ const handleSkip = (): void => {
 .bg-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.6) 0%,
-    rgba(0, 0, 0, 0.4) 50%,
-    rgba(0, 0, 0, 0.7) 100%
-  );
+  background: linear-gradient(to bottom,
+      rgba(0, 0, 0, 0.6) 0%,
+      rgba(0, 0, 0, 0.4) 50%,
+      rgba(0, 0, 0, 0.7) 100%);
 }
 
 .content {

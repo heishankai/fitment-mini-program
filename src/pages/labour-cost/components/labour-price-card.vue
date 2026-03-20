@@ -1,26 +1,26 @@
 <template>
-  <view class="card" @tap="handleTap">
+  <view class="card" @tap="handleTap(item)">
     <view class="card-top">
-      <text class="card-name">{{ name }}</text>
+      <text class="card-name">{{ item?.work_title }}</text>
 
       <view class="card-price-wrap">
         <view class="price-row">
           <text class="price-symbol">¥</text>
-          <text class="price-num">{{ price }}</text>
+          <text class="price-num">{{ item?.work_price }}</text>
         </view>
-        <text class="price-unit">/{{ unit }}</text>
+        <text class="price-unit">/{{ item?.labour_cost?.labour_cost_name }}</text>
       </view>
     </view>
 
     <view class="card-info">
       <view class="info-row">
         <text class="info-label">计价</text>
-        <text class="info-value">{{ pricingNote }}</text>
+        <text class="info-value">{{ item?.pricing_description }}</text>
       </view>
 
       <view class="info-row">
         <text class="info-label">服务</text>
-        <text class="info-value">{{ serviceScope }}</text>
+        <text class="info-value">{{ item?.service_scope }}</text>
       </view>
     </view>
 
@@ -37,53 +37,28 @@
 
 
 <script setup lang="ts">
-import { computed } from 'vue'
 
 interface LaborPriceItem {
   id: number
-  name: string
-  price: string | number
-  unit: string
-  pricingNote: string
-  serviceScope: string
+  work_title: string
+  work_price: string | number
+  labour_cost: {
+    labour_cost_name: string
+  }
+  pricing_description: string
+  service_scope: string
 }
 
-const props = defineProps<{
+defineProps<{
   item: LaborPriceItem
 }>()
 
-/**
- * 解构成 computed，避免 template 直接访问深层 props
- * 同时增强健壮性
- */
-const id = computed(() => props.item?.id ?? 0)
-const name = computed(() => props.item?.name ?? '')
-const price = computed(() => props.item?.price ?? '--')
-const pricingNote = computed(() => props.item?.pricingNote ?? '')
-const serviceScope = computed(() => props.item?.serviceScope ?? '')
 
-/**
- * 单位解析更严谨
- * 支持：
- * "元/㎡"
- * "㎡"
- * "/㎡"
- */
-const unit = computed(() => {
-  const raw = props.item?.unit?.trim() ?? ''
-  if (!raw) return ''
+const handleTap = (item): void => {
 
-  const index = raw.indexOf('/')
-  return index >= 0 ? raw.slice(index + 1) : raw
-})
-
-const handleTap = (): void => {
-  if (!id.value) return
-
+  const { id } = item ?? {}
   uni.navigateTo({
-    url: `/package-labor-cost/labor-price-detail/index?id=${encodeURIComponent(
-      String(id.value)
-    )}`
+    url: `/package-labor-cost/labor-price-detail/index?id=${id}`
   })
 }
 </script>

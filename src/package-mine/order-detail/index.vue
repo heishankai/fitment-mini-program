@@ -1,36 +1,16 @@
 <template>
   <view class="container">
-    <scroll-view
-      class="scroll-view"
-      scroll-y
-      enable-back-to-top
-      :scroll-with-animation="true"
-      :show-scrollbar="false"
-      refresher-enabled
-      :refresher-triggered="isTriggered"
-      @scroll="onScroll"
-      @refresherrefresh="onRefresherrefresh"
-    >
+    <scroll-view class="scroll-view" scroll-y enable-back-to-top :scroll-with-animation="true" :show-scrollbar="false"
+      refresher-enabled :refresher-triggered="isTriggered" @scroll="onScroll" @refresherrefresh="onRefresherrefresh">
       <view class="scroll-content">
-        <order-card
-          v-if="orderDetail?.craftsman_user"
-          :craftsman="orderDetail.craftsman_user"
-          :order-id="orderId"
-          :order-no="orderDetail?.order_no"
-        />
+        <order-card v-if="orderDetail?.craftsman_user" :craftsman="orderDetail.craftsman_user" :order-id="orderId"
+          :order-no="orderDetail?.order_no" />
 
-        <order-cost-card
-          v-if="orderDetail?.parent_work_price_groups?.length"
-          :order-detail="orderDetail"
-          @refresh="() => orderId && loadOrderDetail(orderId)"
-        />
+        <order-cost-card v-if="orderDetail?.parent_work_price_groups?.length" :order-detail="orderDetail"
+          @refresh="() => orderId && loadOrderDetail(orderId)" />
 
-        <sub-work-price-list
-          v-if="subWorkPricesList?.length"
-          :sub-work-prices="subWorkPricesList"
-          :order-detail="orderDetail"
-          @refresh="() => orderId && loadOrderDetail(orderId)"
-        />
+        <sub-work-price-list v-if="subWorkPricesList?.length" :sub-work-prices="subWorkPricesList"
+          :order-detail="orderDetail" @refresh="() => orderId && loadOrderDetail(orderId)" />
       </view>
     </scroll-view>
 
@@ -47,6 +27,8 @@
         <uni-icons type="chat" size="20" color="#fff" />联系工匠
       </button>
     </view>
+
+    <ContactService :scroll-top="scrollTop" />
   </view>
 </template>
 
@@ -55,11 +37,8 @@ import { onLoad } from '@dcloudio/uni-app'
 import OrderCard from './components/order-card.vue'
 import OrderCostCard from './components/order-cost-card.vue'
 import SubWorkPriceList from './components/sub-work-price-list.vue'
-import {
-  getOrderDetailService,
-  cancelOrderService,
-  getSubWorkPricesByOrderId,
-} from './service'
+import ContactService from '@/components/contact-service.vue'
+import { getOrderDetailService, cancelOrderService, getSubWorkPricesByOrderId, } from './service'
 import { handleContactUser } from './utils'
 
 const orderDetail = ref<any>({})
@@ -114,30 +93,21 @@ const handleCancelOrder = async (): Promise<void> => {
 
   uni.showLoading({ title: '取消中...', mask: true })
 
-  try {
-    const { success, message } = await cancelOrderService({
-      orderId: Number(orderId.value),
-    })
 
-    uni.hideLoading()
+  const { success, message } = await cancelOrderService({
+    orderId: Number(orderId.value),
+  })
 
-    if (!success) {
-      uni.showToast({
-        title: message || '取消失败，请重试',
-        icon: 'none',
-      })
-      return
-    }
-
-    uni.showToast({ title: '订单已取消', icon: 'success' })
-
-    if (orderId.value) await loadOrderDetail(orderId.value)
-
-    setTimeout(() => uni.navigateBack(), 1500)
-  } catch (error: any) {
-    console.error('取消订单失败:', error)
-    uni.hideLoading()
+  if (!success) {
+    uni.showToast({ title: message || '取消失败，请重试', icon: 'none', })
+    return
   }
+
+  uni.showToast({ title: '订单已取消', icon: 'success' })
+
+  if (orderId.value) await loadOrderDetail(orderId.value)
+
+  setTimeout(() => uni.navigateBack(), 1500)
 }
 
 onLoad((options) => {

@@ -69,7 +69,7 @@ const handleStores = (): void => {
 }
 
 const handleQuote = (): void => {
-  uni.navigateTo({ url: '/package-home/renovation-form/index' })
+  uni.navigateTo({ url: '/package-labor-cost/service-request/index' })
 }
 
 const handleFind = (): void => {

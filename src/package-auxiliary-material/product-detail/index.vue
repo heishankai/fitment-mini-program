@@ -6,7 +6,7 @@
         <swiper class="header-swiper" :indicator-dots="carouselImages.length > 1" :autoplay="carouselImages.length > 1"
           :circular="true" :duration="500" :interval="3000">
           <swiper-item v-for="(img, idx) in carouselImages" :key="idx">
-            <image class="header-img" :src="img" mode="aspectFill" @tap="handlePreviewCarousel(idx)" />
+            <image class="header-img" :src="img" mode="aspectFill" />
           </swiper-item>
         </swiper>
         <view class="header-overlay" />
@@ -80,8 +80,8 @@
           </view>
           <view v-for="(item, index) in productDetail.commodity_details" :key="index" class="detail-item">
             <view v-if="item.title" class="detail-item-title">{{ item.title }}</view>
-            <image v-for="(img, imgIndex) in item.image || []" :key="imgIndex" class="detail-image" :src="img"
-              mode="widthFix" @tap="handlePreviewImage(img, item.image)" />
+            <image :show-menu-by-longpress="false" v-for="(img, imgIndex) in item.image || []" :key="imgIndex"
+              class="detail-image" :src="img" mode="widthFix" />
             <view v-if="item.desc" class="detail-desc">{{ item.desc }}</view>
           </view>
         </section>
@@ -92,7 +92,7 @@
           <view class="warranty-content">
             <text class="warranty-title">平台质保承诺</text>
             <text class="warranty-desc">
-              所有通过平台选购的辅材，均享受平台先行赔付保障。材料质量问题若不达标，无条件退换直至满意。
+              所有通过平台购买的辅材，均享受假一赔三保障，若因送货不及时而产生的额外的工费由平台承担。
             </text>
           </view>
         </section>
@@ -112,7 +112,6 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { previewImage } from '@/utils'
 import { getCommodityDetailService } from './service'
 
 const productDetail = ref<any>(null)
@@ -158,17 +157,6 @@ const loadProductDetail = async (id: string): Promise<void> => {
   const { success, data } = await getCommodityDetailService(id)
   if (!success) return
   productDetail.value = data
-}
-
-const handlePreviewCarousel = (index: number): void => {
-  const images = carouselImages.value.filter(Boolean)
-  if (images.length === 0) return
-  previewImage(images[index] || images[0], images)
-}
-
-const handlePreviewImage = (currentImage: string, images: string[]): void => {
-  const allImages = productDetail.value?.commodity_details?.flatMap((item: any) => item.image || []) || []
-  previewImage(currentImage, allImages.length > 0 ? allImages : images || [])
 }
 
 onLoad((options: any) => {

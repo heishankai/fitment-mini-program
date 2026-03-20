@@ -136,7 +136,7 @@ const handleDetail = (): void => {
   text-align: center;
 }
 
-.grid-item + .grid-item {
+.grid-item+.grid-item {
   margin-left: 24rpx;
 }
 

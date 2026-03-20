@@ -2,39 +2,19 @@
   <view class="container">
     <!-- Tabs -->
     <view class="tabs-container">
-      <view
-        v-for="(tab, index) in tabs"
-        :key="tab.key"
-        class="tab"
-        :class="{ active: currentIndex === index }"
-        @click="switchTab(index)"
-      >
+      <view v-for="(tab, index) in tabs" :key="tab.key" class="tab" :class="{ active: currentIndex === index }"
+        @click="switchTab(index)">
         {{ tab.name }}
       </view>
     </view>
 
     <!-- Swiper -->
-    <swiper
-      class="swiper-container"
-      :current="currentIndex"
-      @change="onSwiperChange"
-      :duration="300"
-    >
+    <swiper class="swiper-container" :current="currentIndex" @change="onSwiperChange" :duration="300">
       <swiper-item v-for="(tab, index) in tabs" :key="tab.key" class="swiper-item">
-        <scroll-view
-          class="scroll-view"
-          scroll-y
-          refresher-enabled
-          :refresher-triggered="refresherTriggered[index]"
-          @refresherrefresh="() => refresh(index)"
-        >
+        <scroll-view class="scroll-view" scroll-y refresher-enabled :refresher-triggered="refresherTriggered[index]"
+          @refresherrefresh="() => refresh(index)">
           <!-- Order List -->
-          <view
-            v-for="order in orderMap[tab.status]"
-            :key="order.id"
-            class="order-card"
-            @click="goDetail(order.id)"
-          >
+          <view v-for="order in orderMap[tab.status]" :key="order.id" class="order-card" @click="goDetail(order.id)">
             <!-- Tags -->
             <view class="order-tags">
               <view class="house-type-tag" :class="getHouseTypeInfo(order.houseType).class">
@@ -86,10 +66,10 @@ import { getOrderListService } from './service'
 
 /* ================= Tabs ================= */
 const tabs = [
-  { key: 'construction', name: '施工中', status: 2 },
   { key: 'pending', name: '待开工', status: 1 },
-  { key: 'cancelled', name: '已取消', status: 4 },
+  { key: 'construction', name: '施工中', status: 2 },
   { key: 'completed', name: '已完工', status: 3 },
+  { key: 'cancelled', name: '已取消', status: 4 },
 ]
 
 /* ================= 映射配置 ================= */

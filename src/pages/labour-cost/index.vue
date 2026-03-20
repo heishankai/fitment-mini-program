@@ -49,7 +49,7 @@
               </text>
             </view>
 
-            <LabourPriceCard v-for="item in priceList" :key="item.id" :item="item" />
+            <labour-price-card v-for="item in priceList" :key="item.id" :item="item" />
 
             <!-- 加载更多 -->
             <view v-if="loading && priceList.length > 0" class="load-more">
@@ -74,11 +74,11 @@
 import { ref, computed } from 'vue'
 import CustomTabBar from '@/components/custom-tab-bar.vue'
 import LabourCostHeader from './components/labour-cost-header.vue'
-import LabourPriceCard from './components/labour-price-card.vue'
+import labourPriceCard from './components/labour-price-card.vue'
 import { getWorkKindListService, getPriceListService } from './service'
 import { ICON_MAP } from './utils'
 
-const workKindList = ref<{ id: number; work_kind_name: string }[]>([])
+const workKindList = ref<{ work_kind_code: number; work_kind_name: string }[]>([])
 const selectedWorkKindId = ref<number | null>(null)
 const priceList = ref<any[]>([])
 const loading = ref(false)
@@ -88,7 +88,7 @@ const pageSize = 10
 const mainScrollStyle = ref({ height: '400px' })
 
 const selectedWorkKindName = computed(() =>
-  workKindList.value.find(k => k.id === selectedWorkKindId.value)?.work_kind_name ?? ''
+  workKindList.value.find(k => k.work_kind_code === selectedWorkKindId.value)?.work_kind_name ?? ''
 )
 
 // 带图标的分类（用于左侧导航）
@@ -96,19 +96,24 @@ const categories = computed(() => {
   const def = { iconType: 'person', iconPrefix: '' }
   return workKindList.value.map(k => {
     const icon = ICON_MAP[k.work_kind_name] ?? def
-    return { id: k.id, name: k.work_kind_name, ...icon }
+    return { id: k.work_kind_code, name: k.work_kind_name, ...icon }
   })
 })
 
 const loadWorkKindList = async (): Promise<void> => {
-  const { data, success } = await getWorkKindListService()
-  if (success && data?.length) {
-    // 工长排第一
-    workKindList.value = [...data].sort((a, b) =>
-      a.work_kind_name === '工长' ? -1 : b.work_kind_name === '工长' ? 1 : 0
-    )
-    selectedWorkKindId.value = workKindList.value[0].id
-    loadPriceList()
+  uni.showLoading({ title: '加载中...', mask: true })
+  try {
+    const { data, success } = await getWorkKindListService()
+    if (success && data?.length) {
+      // 工长排第一
+      workKindList.value = [...data].sort((a, b) =>
+        a.work_kind_name === '工长' ? -1 : b.work_kind_name === '工长' ? 1 : 0
+      )
+      selectedWorkKindId.value = workKindList.value[0].work_kind_code
+      await loadPriceList()
+    }
+  } finally {
+    uni.hideLoading()
   }
 }
 
@@ -128,25 +133,18 @@ const loadPriceList = async (isLoadMore = false): Promise<void> => {
     const res = await getPriceListService({
       pageIndex: pageIndex.value,
       pageSize,
-      work_kind_id: workKindId,
+      work_kind_code: workKindId,
     })
 
     if (!res.success) return
 
     const list = res.data ?? []
-    const items = list.map((w: any) => ({
-      id: w.id,
-      name: w.work_title ?? '',
-      price: w.work_price ?? '--',
-      unit: w.labour_cost?.labour_cost_name ?? '项',
-      pricingNote: w.pricing_description ?? '',
-      serviceScope: w.service_scope ?? '',
-    }))
+   
 
     if (isLoadMore) {
-      priceList.value = priceList.value.concat(items)
+      priceList.value = priceList.value.concat(list)
     } else {
-      priceList.value = items
+      priceList.value = list
     }
 
     // 使用 pageTotal 判断是否还有更多（接口返回：pageIndex、pageSize、total、pageTotal）

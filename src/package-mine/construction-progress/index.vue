@@ -1,21 +1,11 @@
 <template>
   <view class="container">
-    <scroll-view
-      class="scroll-view"
-      scroll-y
-      :show-scrollbar="false"
-      refresher-enabled
-      :refresher-triggered="isTriggered"
-      @refresherrefresh="onRefresherrefresh"
-    >
+    <scroll-view class="scroll-view" scroll-y :show-scrollbar="false" refresher-enabled
+      :refresher-triggered="isTriggered" @refresherrefresh="onRefresherrefresh">
       <view v-if="progressList?.length" class="progress-container">
         <view class="progress-list">
-          <timeline
-            v-for="(item, index) in progressList"
-            :key="index"
-            :completed="isCompleted(item)"
-            :is-last="index === progressList.length - 1"
-          >
+          <timeline v-for="(item, index) in progressList" :key="index" :completed="isCompleted(item)"
+            :is-last="index === progressList.length - 1">
             <view class="content-card">
               <view class="date-time-row">
                 <uni-icons type="calendar" size="16" color="#666" />
@@ -34,12 +24,8 @@
               </view>
 
               <view v-if="item?.photos?.length" class="photos-grid">
-                <view
-                  v-for="(photo, photoIndex) in item.photos"
-                  :key="photoIndex"
-                  class="photo-item"
-                  @tap="previewImage(photo, item?.photos)"
-                >
+                <view v-for="(photo, photoIndex) in item.photos" :key="photoIndex" class="photo-item"
+                  @tap="previewImage(photo, item?.photos)">
                   <image :src="photo" mode="aspectFill" class="photo-image" />
                 </view>
               </view>

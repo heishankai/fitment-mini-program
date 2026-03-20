@@ -19,4 +19,8 @@ page {
   margin: 0;
   padding: 0;
 }
+
+button {
+  border: none;
+}
 </style>

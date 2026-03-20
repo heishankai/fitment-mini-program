@@ -2,7 +2,7 @@
   <view class="container">
     <scroll-view class="scroll-view" scroll-y>
       <!-- 顶部品牌区 -->
-      <mine-header :points="orderCount" :userInfo="userInfo" />
+      <mine-header  :userInfo="userInfo" />
 
       <!-- 我的装修（核心区域） -->
       <mine-renovation :order-list="orderList" />
@@ -76,7 +76,7 @@ import { getOrderListService } from '@/api/order'
 
 const userInfo = ref<any>({})
 const orderList = ref<any[]>([])
-const orderCount = computed(() => orderList.value.length)
+// const orderCount = computed(() => orderList.value.length)
 
 // 加载订单列表
 const loadOrderList = async (): Promise<void> => {

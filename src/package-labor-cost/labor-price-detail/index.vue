@@ -2,33 +2,38 @@
   <view class="container">
     <!-- 滚动容器 -->
     <scroll-view class="scroll-view" scroll-y :scroll-top="scrollTop">
-      <!-- 可滚动的 Header（图片随滚动） -->
       <view class="header-wrap">
-        <image :src="item?.display_images[0] || DEFAULT_IMAGE" class="header-img" mode="aspectFill" />
+        <swiper class="swiper" :indicator-dots="true" :autoplay="true" :circular="true" :duration="500"
+          :show-menu-by-longpress="false" :interval="3000">
+          <swiper-item v-for="(image, index) in orderDetail?.display_images || [DEFAULT_IMAGE]" :key="index">
+            <image class="header-img" :src="image || DEFAULT_IMAGE" mode="aspectFill" />
+          </swiper-item>
+        </swiper>
+        <!-- <image class="header-img" :src="item?.display_images[0] || DEFAULT_IMAGE" mode="aspectFill" /> -->
         <view class="header-overlay" />
 
         <!-- 底部标题区域（随图滚动） -->
-        <view v-if="item" class="header-bottom">
+        <view v-if="orderDetail" class="header-bottom">
           <view class="trade-badge">
-            <text class="trade-text">{{ item.work_kind?.title }}</text>
+            <text class="trade-text">{{ orderDetail.work_kind?.title }}</text>
             <view class="badge-dot" />
             <text class="trade-text">标准工艺</text>
           </view>
-          <text class="header-title">{{ item.work_title }}</text>
-          <text class="header-desc">{{ item.description || item.serviceScope }}</text>
+          <text class="header-title">{{ orderDetail.work_title }}</text>
+          <text class="header-desc">{{ orderDetail.description || orderDetail.serviceScope }}</text>
         </view>
       </view>
 
       <!-- 内容区 -->
-      <view v-if="item" class="content-inner">
+      <view v-if="orderDetail" class="content-inner">
         <!-- 价格卡片 -->
         <view class="price-section">
           <view class="price-left">
             <text class="price-label">平台指导价</text>
             <view class="price-row">
               <text class="price-symbol">¥</text>
-              <text class="price-num">{{ item.work_price }}</text>
-              <text class="price-unit">/ {{ item.labour_cost.labour_cost_name }}</text>
+              <text class="price-num">{{ orderDetail?.work_price }}</text>
+              <text class="price-unit">/ {{ orderDetail.labour_cost?.labour_cost_name }}</text>
             </view>
           </view>
           <view class="price-badge">
@@ -43,7 +48,7 @@
             <view class="title-bar" />
             <text class="title-text">计价说明</text>
           </view>
-          <view class="pricing-note">{{ item.pricing_description }}</view>
+          <view class="pricing-note">{{ orderDetail.pricing_description }}</view>
         </section>
 
         <!-- 服务范围 -->
@@ -52,18 +57,21 @@
             <view class="title-bar" />
             <text class="title-text">服务范围</text>
           </view>
-          <text class="service-scope">{{ item.service_scope }}</text>
+          <text class="service-scope">{{ orderDetail.service_scope }}</text>
         </section>
 
-        <!-- 验收标准 -->
-        <section v-if="item.service_details?.length" class="detail-section">
+        <!-- 验收标准（图片在上、文字在下，无点击放大） -->
+        <section v-if="orderDetail.service_details?.length" class="detail-section standards-section">
           <view class="section-title">
             <view class="title-bar" />
             <text class="title-text">验收标准</text>
           </view>
           <view class="standards-list">
-            <view v-for="(std, idx) in item.service_details" :key="idx" class="standard-item">
-              <uni-icons custom-prefix="iconfont" type="icon-wancheng" size="18" color="#2D635E" />
+            <view v-for="(std, idx) in orderDetail.service_details" :key="idx" class="standard-block">
+              <view v-if="std.service_image?.length" class="standard-image-wrap">
+                <image class="standard-image" :src="std.service_image[0]" mode="aspectFill"
+                  :show-menu-by-longpress="false" @tap.stop />
+              </view>
               <text class="standard-text">{{ std.service_desc }}</text>
             </view>
           </view>
@@ -75,7 +83,7 @@
           <view class="warranty-content">
             <text class="warranty-title">平台质保承诺</text>
             <text class="warranty-desc">
-              所有通过平台预约的工匠服务，均享受平台先行赔付保障。施工质量问题若不达标，无条件返工直至满意。
+              所有通过平台预约的工匠服务，均享受平台兜底质保，施工质量若不达标，无条件返工至符合标准。
             </text>
           </view>
         </section>
@@ -97,7 +105,7 @@
         <text class="footer-label">预估总价</text>
         <text class="footer-value">待量房后确认</text>
       </view>
-      <button class="footer-btn" @tap="goBook">
+      <button class="footer-btn" @tap="goBook(orderDetail)">
         <text>预约此服务</text>
         <uni-icons type="arrow-right" size="16" color="#fff" />
       </button>
@@ -108,11 +116,12 @@
 <script setup lang="ts">
 import { getWorkTypeDetailService } from './service'
 
+
 // 默认图片常量
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&q=80'
 
 // 响应式数据
-const item = ref<any>({})
+const orderDetail = ref<any>({})
 const scrollTop = ref(0)
 
 // 精准计算返回按钮垂直位置（仅微信小程序）
@@ -129,28 +138,31 @@ const navBackTop = computed(() => {
   }
 })
 
-// 页面加载
-onLoad(async (options) => {
-  if (options?.id) {
-    const { data, success } = await getWorkTypeDetailService(options?.id)
-    if (success) {
-      item.value = data
-    }
-  }
-})
-
 // 返回上一页
 const goBack = (): void => {
   uni.navigateBack()
 }
 
-// 跳转填写服务需求页
-const goBook = (): void => {
-  if (!item.value) return
+// 跳转填写服务需求页（传递 work_kind_code 以便预选工匠类型）
+const goBook = (orderDetail): void => {
+  console.log(orderDetail,'itemitemitem');
+  
+  const work_kind = orderDetail.work_kind
+
   uni.navigateTo({
-    url: `/package-labor-cost/service-request/index?id=${item.value.id}&work_kind_name=${item.value.work_kind?.title}`
+    url: `/package-labor-cost/service-request/index?work_kind_code=${work_kind?.work_kind_code}&work_kind_name=${encodeURIComponent(work_kind?.work_kind_name)}`
   })
 }
+
+// 页面加载
+onLoad(async (options) => {
+  if (options?.id) {
+    const { data, success } = await getWorkTypeDetailService(options?.id)
+    if (success) {
+      orderDetail.value = data
+    }
+  }
+})
 </script>
 
 <style lang="scss" scoped>
@@ -173,6 +185,13 @@ const goBook = (): void => {
   width: 100%;
   height: 600rpx;
   flex-shrink: 0;
+
+  .swiper {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
 
   .header-img {
     width: 100%;
@@ -352,23 +371,34 @@ const goBook = (): void => {
     .standards-list {
       display: flex;
       flex-direction: column;
-      gap: 24rpx;
+      gap: 80rpx;
 
-      .standard-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 24rpx;
+      .standard-block {
+        display: block;
 
-        uni-icons {
-          flex-shrink: 0;
-          margin-top: 4rpx;
+        .standard-image-wrap {
+          width: 100%;
+          height: 560rpx;
+          border-radius: 32rpx;
+          overflow: hidden;
+          background: #f2f2f2;
+          margin-bottom: 40rpx;
+        }
+
+        .standard-image {
+          width: 100%;
+          height: 100%;
+          display: block;
         }
 
         .standard-text {
-          flex: 1;
-          font-size: 28rpx;
-          color: #555;
-          line-height: 1.6;
+          display: block;
+          font-size: 30rpx;
+          color: #222;
+          line-height: 1.75;
+          text-align: justify;
+          letter-spacing: 0.5rpx;
+          padding: 0 4rpx;
         }
       }
     }

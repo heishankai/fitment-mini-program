@@ -16,7 +16,7 @@ export const getWorkKindListService = (): Promise<any> => {
 export const getPriceListService = (params: {
   pageIndex: number
   pageSize: number
-  work_kind_id?: number
+  work_kind_code?: number
 }): Promise<any> => {
   return request({
     method: 'POST',

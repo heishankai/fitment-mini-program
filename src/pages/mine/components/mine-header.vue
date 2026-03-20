@@ -12,7 +12,7 @@
     </view>
 
     <view class="points-row">
-      <text class="points-num">{{ points }}</text>
+      <text class="points-num">{{ '' }}</text>
       <view class="points-link" @tap="goToOrder">
         <text class="points-link-text">去下单</text>
         <uni-icons type="right" size="14" color="#A8ADAD" />
@@ -22,8 +22,8 @@
 </template>
 
 <script setup lang="ts">
-const { points = 0 } = defineProps<{
-  points?: number
+defineProps<{
+  // points?: number
   userInfo?: any
 }>()
 

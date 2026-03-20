@@ -14,12 +14,7 @@
     <view class="feature-grid">
       <view class="grid-item" @tap="handleMySite">
         <view class="grid-icon-wrap">
-          <uni-icons
-            custom-prefix="iconfont"
-            type="icon-hammer-outline"
-            size="20"
-            color="#6E7373"
-          />
+          <uni-icons custom-prefix="iconfont" type="icon-hammer-outline" size="20" color="#6E7373" />
         </view>
         <text class="grid-label">我的工地</text>
       </view>
@@ -35,23 +30,14 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{ orderList?: any[] }>()
 
 const handleAllProjects = (): void => {
   uni.navigateTo({ url: '/package-mine/orders/index' })
 }
 
 const handleMySite = (): void => {
-  const firstConstruction = (props.orderList ?? []).find(
-    (o: any) => Number(o.order_status) === 2,
-  )
-  if (firstConstruction?.id) {
-    uni.navigateTo({
-      url: `/package-mine/order-detail/index?id=${firstConstruction.id}`,
-    })
-  } else {
-    uni.navigateTo({ url: '/package-mine/orders/index' })
-  }
+
+  uni.navigateTo({ url: '/package-mine/orders/index' })
 }
 
 const handleAfterSale = (): void => {

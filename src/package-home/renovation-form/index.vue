@@ -51,7 +51,7 @@
         <section class="detail-section">
           <view class="section-title">
             <view class="title-bar" />
-            <text class="title-text">房屋类型<text class="required">*</text></text>
+            <text class="title-text">房屋类型</text>
           </view>
           <view class="house-type-grid">
             <view v-for="type in houseTypes" :key="type" class="type-item"
@@ -246,10 +246,12 @@ const handleSubmit = async (e: any): Promise<void> => {
     }
 
     successPopupRef.value?.open('center')
+
     setTimeout(() => {
       successPopupRef.value?.close()
-      wx.navigateBack()
-    }, 2000)
+      uni.navigateTo({ url: '/package-mine/orders/index' })
+    }, 1500)
+
   } catch (err) {
     console.error('提交失败:', err)
     uni.showToast({ title: '操作失败，请稍后重试', icon: 'none' })

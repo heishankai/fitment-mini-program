@@ -125,3 +125,16 @@ export const batchAcceptOrderMaterialsService = (params: {
     data: params,
   })
 }
+
+// 获取支付参数
+export const getPayParamsService = (params: {
+  order_no: string
+  order_amount: number | string
+  openid: string
+}): Promise<any> => {
+  return request({
+    method: 'POST',
+    url: `/wx-pay/order`,
+    data: params,
+  })
+}

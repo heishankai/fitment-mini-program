@@ -6,7 +6,7 @@
       <scroll-prompt />
       <guarantee-card />
       <material-transparency-card />
-      <schedule-tracking-card />
+      <!-- <schedule-tracking-card /> -->
       <view style="height: 200rpx"></view>
     </scroll-view>
     <custom-tab-bar selected="0" />
@@ -18,7 +18,7 @@ import CustomTabBar from '@/components/custom-tab-bar.vue'
 import Header from './components/header.vue'
 import PlatformCard from './components/platform-card.vue'
 import MaterialTransparencyCard from './components/material-transparency-card.vue'
-import ScheduleTrackingCard from './components/schedule-tracking-card.vue'
+// import ScheduleTrackingCard from './components/schedule-tracking-card.vue'
 import GuaranteeCard from './components/guarantee-card.vue'
 import ScrollPrompt from './components/scroll-prompt.vue'
 

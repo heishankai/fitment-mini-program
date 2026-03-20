@@ -139,7 +139,8 @@
         {
           "path": "service-request/index",
           "style": {
-            "navigationBarTitleText": "填写服务需求",
+            "navigationBarTitleText": "预约服务",
+            "navigationBarBackgroundColor": "#F5F7F6",
             "disableScroll": true
           }
         }
@@ -193,6 +194,13 @@
           "path": "craftsman-service/index",
           "style": {
             "navigationBarTitleText": "联系工匠",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "craftsman-profile/index",
+          "style": {
+            "navigationBarTitleText": "工匠主页",
             "disableScroll": true
           }
         },
