@@ -1,13 +1,28 @@
 <!-- 辅材清单页：展示订单辅材列表，支持单项/批量验收 -->
 <template>
   <view class="container">
-    <scroll-view class="scroll-view" scroll-y :show-scrollbar="false" refresher-enabled
-      :refresher-triggered="isTriggered" @refresherrefresh="onRefresherrefresh">
+    <scroll-view
+      class="scroll-view"
+      scroll-y
+      :show-scrollbar="false"
+      refresher-enabled
+      :refresher-triggered="isTriggered"
+      @refresherrefresh="onRefresherrefresh"
+    >
       <!-- 辅材列表 -->
       <view v-if="materialsList?.commodity_list?.length" class="materials-list">
-        <view v-for="commodity in materialsList.commodity_list" :key="commodity.id" class="material-item">
-          <image v-if="commodity.commodity_cover?.length" :src="commodity.commodity_cover[0]" mode="aspectFill"
-            class="material-image" @tap.stop="previewImage(commodity.commodity_cover[0], commodity.commodity_cover)" />
+        <view
+          v-for="commodity in materialsList.commodity_list"
+          :key="commodity.id"
+          class="material-item"
+        >
+          <image
+            v-if="commodity.commodity_cover?.length"
+            :src="commodity.commodity_cover[0]"
+            mode="aspectFill"
+            class="material-image"
+            @tap.stop="previewImage(commodity.commodity_cover[0], commodity.commodity_cover)"
+          />
           <view v-else class="material-image material-placeholder">
             <uni-icons type="shop" size="32" color="#ccc" />
           </view>
@@ -15,14 +30,25 @@
           <view class="material-info">
             <text class="material-name">{{ commodity.commodity_name }}</text>
             <text class="material-meta">
-              ¥{{ formatCost(getUnitPrice(commodity)) }}/{{ commodity.commodity_unit }} × {{ commodity.quantity }}
+              ¥{{ formatCost(getUnitPrice(commodity)) }}/{{ commodity.commodity_unit }} ×
+              {{ commodity.quantity }}
             </text>
             <view class="material-footer">
-              <text class="material-total-price">¥{{ formatCost(commodity.settlement_amount) }}</text>
+              <text class="material-total-price"
+                >¥{{ formatCost(commodity.settlement_amount) }}</text
+              >
 
-              <view v-if="commodity.is_paid" class="accept-status" :class="{ accepted: commodity.is_accepted }"
-                @tap.stop="handleAcceptMaterial(commodity)">
-                <uni-icons type="checkmarkempty" size="14" :color="commodity.is_accepted ? '#2d635e' : '#fff'" />
+              <view
+                v-if="commodity.is_paid"
+                class="accept-status"
+                :class="{ accepted: commodity.is_accepted }"
+                @tap.stop="handleAcceptMaterial(commodity)"
+              >
+                <uni-icons
+                  type="checkmarkempty"
+                  size="14"
+                  :color="commodity.is_accepted ? '#2d635e' : '#fff'"
+                />
                 <text>{{ commodity.is_accepted ? '已验收' : '确认验收' }}</text>
               </view>
 
@@ -30,7 +56,6 @@
                 <uni-icons type="checkmarkempty" size="14" color="#fff" />
                 <text>确认支付</text>
               </view>
-
             </view>
           </view>
         </view>
@@ -73,7 +98,7 @@ import {
   getMaterialsByOrderId,
   acceptOrderMaterialsService,
   batchAcceptOrderMaterialsService,
-} from '../order-detail/service'
+} from './service'
 import { formatCost, previewImage } from '@/utils'
 
 import { getPayParamsService } from './service'
@@ -89,7 +114,10 @@ const isTriggered = ref(false) // 下拉刷新状态
 /** 辅材总数量 */
 const totalQuantity = computed(() => {
   if (!materialsList.value?.commodity_list) return 0
-  return materialsList.value.commodity_list.reduce((sum: number, item: any) => sum + (Number(item.quantity) || 0), 0)
+  return materialsList.value.commodity_list.reduce(
+    (sum: number, item: any) => sum + (Number(item.quantity) || 0),
+    0,
+  )
 })
 
 /** 是否存在未支付的辅材 */
@@ -114,7 +142,10 @@ const getUnitPrice = (commodity: any): number => {
 const fetchMaterials = async (): Promise<any> => {
   if (orderType.value === 'gangmaster') {
     if (!workPriceItemId.value || !assignedCraftsmanId.value) return null
-    return getMaterialsByWorkPriceItemIdAndCraftsman(workPriceItemId.value, assignedCraftsmanId.value)
+    return getMaterialsByWorkPriceItemIdAndCraftsman(
+      workPriceItemId.value,
+      assignedCraftsmanId.value,
+    )
   }
   if (!orderId.value) return null
   return getMaterialsByOrderId(orderId.value)
@@ -184,7 +215,10 @@ const handleBatchPay = async (): Promise<void> => {
     return
   }
 
-  const totalAmount = unpaidList.reduce((sum: number, c: any) => sum + (Number(c.settlement_amount) || 0), 0)
+  const totalAmount = unpaidList.reduce(
+    (sum: number, c: any) => sum + (Number(c.settlement_amount) || 0),
+    0,
+  )
   const materialsIds = unpaidList.map((c: any) => c.id)
 
   wx.showModal({
@@ -261,14 +295,13 @@ const handlePay = async (materials: any): Promise<void> => {
     cancelText: '取消',
     confirmColor: '#2d635e',
     success: async (modalRes) => {
-
       if (!modalRes.confirm) return
 
       // 调用服务端接口 - 获取支付参数
       const { success, data } = await getPayParamsService({
         pay_type: 'material_single',
         materialId: id,
-        order_amount: settlement_amount
+        order_amount: settlement_amount,
       })
 
       if (!success) return
@@ -288,7 +321,7 @@ const handlePay = async (materials: any): Promise<void> => {
 
 // 页面加载时解析参数并拉取数据
 onLoad((options = {}) => {
-  console.log(options, 'options');
+  console.log(options, 'options')
 
   workPriceItemId.value = options.workPriceItemId ?? ''
   assignedCraftsmanId.value = options.assignedCraftsmanId ?? ''

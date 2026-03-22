@@ -24,6 +24,34 @@ export const useGuessList = (): { guessRef: any; onScrolltolower: any } => {
   }
 }
 
+export interface ShowModalOptions {
+  title?: string
+  content?: string
+  showCancel?: boolean
+  cancelText?: string
+  cancelColor?: string
+  confirmText?: string
+  confirmColor?: string
+}
+
+/**
+ * 封装 wx.showModal，返回 Promise，便于 async/await 使用
+ * @param options 配置项
+ * @returns Promise<{ confirm: boolean }>
+ */
+export const showModal = (options: ShowModalOptions = {}): Promise<{ confirm: boolean }> => {
+  return new Promise((resolve) => {
+    wx.showModal({
+      confirmColor: '#2d635e',
+      confirmText: '确定',
+      cancelText: '取消',
+      ...options,
+      success: (res) => resolve({ confirm: res.confirm }),
+      fail: () => resolve({ confirm: false }),
+    })
+  })
+}
+
 /**
  * 预览图片
  * @param current

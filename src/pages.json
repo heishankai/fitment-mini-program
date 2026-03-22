@@ -217,6 +217,13 @@
             "navigationBarTitleText": "施工进度",
             "disableScroll": true
           }
+        },
+        {
+          "path": "work-price-list/index",
+          "style": {
+            "navigationBarTitleText": "工价清单",
+            "disableScroll": true
+          }
         }
       ]
     }

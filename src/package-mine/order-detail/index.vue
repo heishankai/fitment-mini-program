@@ -1,130 +1,101 @@
 <template>
   <view class="container">
-    <scroll-view class="scroll-view" scroll-y enable-back-to-top :scroll-with-animation="true" :show-scrollbar="false"
-      refresher-enabled :refresher-triggered="isTriggered" @scroll="onScroll" @refresherrefresh="onRefresherrefresh">
+    <scroll-view
+      class="scroll-view"
+      scroll-y
+      enable-back-to-top
+      :scroll-with-animation="true"
+      :show-scrollbar="false"
+      refresher-enabled
+      :refresher-triggered="is_refreshed"
+      @scroll="onScroll"
+      @refresherrefresh="onRefresherrefresh"
+    >
       <view class="scroll-content">
-        <order-card v-if="orderDetail?.craftsman_user" :craftsman="orderDetail.craftsman_user" :order-id="orderId"
-          :order-no="orderDetail?.order_no" />
-
-        <order-cost-card v-if="orderDetail?.parent_work_price_groups?.length" :order-detail="orderDetail"
-          @refresh="() => orderId && loadOrderDetail(orderId)" />
-
-        <sub-work-price-list v-if="subWorkPricesList?.length" :sub-work-prices="subWorkPricesList"
-          :order-detail="orderDetail" @refresh="() => orderId && loadOrderDetail(orderId)" />
+        <project-overview :order_details="order_details" />
+        <order-cost :order_details="order_details" @refresh="loadOrderDetail(order_details?.id)" />
+        <construction-node :order_details="order_details" />
+        <sub-order-cost
+          v-if="sub_work_groups?.length"
+          :sub_work_groups="sub_work_groups"
+          @refresh="loadOrderDetail(order_details?.id)"
+        />
+        <sub-construction-node
+          v-if="sub_work_construction_nodes.length"
+          :order_details="order_details"
+          :construction_nodes="sub_work_construction_nodes"
+        />
       </view>
     </scroll-view>
-
-    <view class="footer">
-      <template v-if="orderDetail?.order_status === 1">
-        <button class="cancel-btn" @click="handleCancelOrder">
-          <uni-icons type="close" size="20" color="#ff6b6b" />取消订单
-        </button>
-        <button class="consult-btn" @click="handleConsult">
-          <uni-icons type="chat" size="20" color="#fff" />联系工匠
-        </button>
-      </template>
-      <button v-else class="consult-btn" @click="handleConsult">
-        <uni-icons type="chat" size="20" color="#fff" />联系工匠
-      </button>
-    </view>
-
-    <ContactService :scroll-top="scrollTop" />
+    <contact-service :scroll-top="scrollTop" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
-import OrderCard from './components/order-card.vue'
-import OrderCostCard from './components/order-cost-card.vue'
-import SubWorkPriceList from './components/sub-work-price-list.vue'
-import ContactService from '@/components/contact-service.vue'
-import { getOrderDetailService, cancelOrderService, getSubWorkPricesByOrderId, } from './service'
-import { handleContactUser } from './utils'
+// components
+import projectOverview from './components/project-overview.vue'
+import contactService from '@/components/contact-service.vue'
+import orderCost from './components/order-cost.vue'
+import constructionNode from './components/construction-node.vue'
+import subConstructionNode from './components/sub-construction-node.vue'
+import subOrderCost from './components/sub-order-cost.vue'
 
-const orderDetail = ref<any>({})
-const subWorkPricesList = ref<any[]>([])
+// services
+import { getOrderDetailService, getSubWorkService } from './service'
+// utils
+import { resolveCraftsmanNodeData, resolveSubWorkConstructionNodes } from './utils'
+
+const order_details = ref<any>({})
+const sub_work_construction_nodes = ref<any[]>([])
+const sub_work_groups = ref<any[]>([])
 const scrollTop = ref<number>(0)
-const isTriggered = ref(false)
-const orderId = ref<number | string>('')
+const is_refreshed = ref(false)
 
+// 滚动事件
+const onScroll = (e: any): void => (scrollTop.value = e.detail.scrollTop)
+
+// 下拉刷新事件
+const onRefresherrefresh = async (): Promise<void> => {
+  is_refreshed.value = true
+  if (order_details.value?.id) {
+    await loadOrderDetail(order_details.value?.id)
+  }
+  is_refreshed.value = false
+}
+
+// 加载订单详情
 const loadOrderDetail = async (id: number | string): Promise<void> => {
   const { success, data } = await getOrderDetailService(id)
   if (!success) return
-  orderDetail.value = data ?? {}
+  order_details.value = resolveCraftsmanNodeData(data) ?? {}
 
-  const { success: subWorkPricesSuccess, data: subWorkPricesData } =
-    await getSubWorkPricesByOrderId(id)
-  if (subWorkPricesSuccess) {
-    subWorkPricesList.value = subWorkPricesData || []
+  try {
+    const subRes = await getSubWorkService(data?.id)
+    const raw = subRes?.data ?? subRes
+    const list = Array.isArray(raw) ? raw : []
+    sub_work_groups.value = list
+    sub_work_construction_nodes.value = resolveSubWorkConstructionNodes(list)
+  } catch {
+    sub_work_groups.value = []
+    sub_work_construction_nodes.value = []
   }
-}
-
-const onScroll = (e: any): void => {
-  scrollTop.value = e.detail.scrollTop
-}
-
-const onRefresherrefresh = async (): Promise<void> => {
-  isTriggered.value = true
-  if (orderId.value) await loadOrderDetail(orderId.value)
-  isTriggered.value = false
-}
-
-const handleConsult = (): void => {
-  uni?.vibrateShort()
-  handleContactUser(orderDetail.value?.craftsman_user)
-}
-
-const handleCancelOrder = async (): Promise<void> => {
-  uni?.vibrateShort()
-
-  const res = await new Promise<boolean>((resolve) => {
-    wx.showModal({
-      title: '确认取消',
-      content: '确定要取消此订单吗？',
-      confirmText: '确定',
-      cancelText: '取消',
-      confirmColor: '#2d635e',
-      success: (result) => resolve(result.confirm),
-      fail: () => resolve(false),
-    })
-  })
-
-  if (!res) return
-
-  uni.showLoading({ title: '取消中...', mask: true })
-
-
-  const { success, message } = await cancelOrderService({
-    orderId: Number(orderId.value),
-  })
-
-  if (!success) {
-    uni.showToast({ title: message || '取消失败，请重试', icon: 'none', })
-    return
-  }
-
-  uni.showToast({ title: '订单已取消', icon: 'success' })
-
-  if (orderId.value) await loadOrderDetail(orderId.value)
-
-  setTimeout(() => uni.navigateBack(), 1500)
 }
 
 onLoad((options) => {
   const { id } = options ?? {}
-  orderId.value = id
   loadOrderDetail(id)
 })
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 page {
   height: 100%;
   overflow: hidden;
+  background: #fff;
 }
 
 .container {
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -137,69 +108,7 @@ page {
 }
 
 .scroll-content {
-  padding: 20rpx;
+  padding: 24rpx;
   box-sizing: border-box;
-}
-
-.footer {
-  padding: 16px 20px;
-  padding-bottom: max(16px, env(safe-area-inset-bottom));
-  background: $uni-bg-color;
-  border-top: 1px solid $uni-border-color;
-  flex-shrink: 0;
-  display: flex;
-  gap: 12px;
-
-  .cancel-btn {
-    flex: 1;
-    height: 48px;
-    background: $uni-bg-color;
-    color: $uni-color-error;
-    border: 1px solid $uni-color-error;
-    border-radius: 24px;
-    font-size: 16px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-
-    &::after {
-      border: none;
-    }
-
-    &:active {
-      opacity: 0.8;
-      background: rgba($uni-color-error, 0.05);
-    }
-  }
-
-  .consult-btn {
-    flex: 1;
-    height: 48px;
-    background: $uni-color-primary;
-    color: $uni-text-color-inverse;
-    border: none;
-    border-radius: 24px;
-    font-size: 16px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-
-    &::after {
-      border: none;
-    }
-
-    &:active {
-      opacity: 0.8;
-    }
-  }
-
-  button:only-child {
-    flex: 1;
-    width: 100%;
-  }
 }
 </style>

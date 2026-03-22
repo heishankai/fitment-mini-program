@@ -60,7 +60,6 @@
 </template>
 
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
 import EmptyState from '@/components/empty-state.vue'
 import { getOrderListService } from './service'
 
@@ -150,7 +149,7 @@ const formatDate = (date?: string): string => {
 const formatLocation = (order: any): string =>
   [order.location, order.roomType].filter(Boolean).join(' ') || '暂无信息'
 
-onLoad(fetchOrders)
+onShow(fetchOrders)
 </script>
 
 <style lang="scss">

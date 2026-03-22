@@ -1,11 +1,21 @@
 <template>
   <view class="container">
-    <scroll-view class="scroll-view" scroll-y :show-scrollbar="false" refresher-enabled
-      :refresher-triggered="isTriggered" @refresherrefresh="onRefresherrefresh">
+    <scroll-view
+      class="scroll-view"
+      scroll-y
+      :show-scrollbar="false"
+      refresher-enabled
+      :refresher-triggered="isTriggered"
+      @refresherrefresh="onRefresherrefresh"
+    >
       <view v-if="progressList?.length" class="progress-container">
         <view class="progress-list">
-          <timeline v-for="(item, index) in progressList" :key="index" :completed="isCompleted(item)"
-            :is-last="index === progressList.length - 1">
+          <timeline
+            v-for="(item, index) in progressList"
+            :key="index"
+            :completed="isCompleted(item)"
+            :is-last="index === progressList.length - 1"
+          >
             <view class="content-card">
               <view class="date-time-row">
                 <uni-icons type="calendar" size="16" color="#666" />
@@ -24,8 +34,12 @@
               </view>
 
               <view v-if="item?.photos?.length" class="photos-grid">
-                <view v-for="(photo, photoIndex) in item.photos" :key="photoIndex" class="photo-item"
-                  @tap="previewImage(photo, item?.photos)">
+                <view
+                  v-for="(photo, photoIndex) in item.photos"
+                  :key="photoIndex"
+                  class="photo-item"
+                  @tap="previewImage(photo, item?.photos)"
+                >
                   <image :src="photo" mode="aspectFill" class="photo-image" />
                 </view>
               </view>
@@ -46,28 +60,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
 import EmptyState from '@/components/empty-state.vue'
 import Timeline from '@/components/timeline.vue'
-import {
-  getConstructionProgress,
-  getConstructionProgressByOrderId,
-} from './service'
+import { getConstructionProgress, getConstructionProgressByOrderId } from './service'
 import { previewImage, formatDateTimeRange } from '@/utils'
 
 const params = ref<any>({ workPriceItemId: '', craftsmanId: '', orderId: '' })
 const progressList = ref<any[]>([])
 const isTriggered = ref(false)
 
-const isCompleted = (item: any): boolean => !!(item.end_time || (item.photos && item.photos.length > 0))
+const isCompleted = (item: any): boolean =>
+  !!(item.end_time || (item.photos && item.photos.length > 0))
 
 const loadProgress = async (opts: any): Promise<void> => {
   if (opts?.orderId) {
     try {
       const res = await getConstructionProgressByOrderId(opts.orderId)
       const data = res?.data ?? res
-      const list = Array.isArray(data) ? data : data?.list ?? []
+      const list = Array.isArray(data) ? data : (data?.list ?? [])
       progressList.value = list
     } catch {
       progressList.value = []
@@ -84,7 +94,7 @@ const loadProgress = async (opts: any): Promise<void> => {
   try {
     const res = await getConstructionProgress(workPriceItemId, craftsmanId)
     const data = res?.data ?? res
-    const list = Array.isArray(data) ? data : data?.list ?? []
+    const list = Array.isArray(data) ? data : (data?.list ?? [])
     progressList.value = list
   } catch {
     progressList.value = []

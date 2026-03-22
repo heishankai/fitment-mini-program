@@ -1,5 +1,28 @@
 import { request } from '@/utils/request'
 
+interface OrderFeePayParams {
+  pay_type: 'order_platform_service_fee' | 'order_gangmaster_cost';
+  order_id?: number;
+  order_amount: number;
+}
+
+// 获取订单费用支付参数（平台服务费、工长费用）
+export const getPayParamsForOrderService = (params: OrderFeePayParams): Promise<any> => {
+  return request({ method: 'POST', url: `/wx-pay/order-fees`, data: params, })
+}
+
+interface WorkPricePayParams {
+  pay_type: 'work_price_single' | 'work_price_batch' | 'work_price_sub_service_fee_batch';
+  workPriceItemId?: number;
+  workPriceItemIds?: number[];
+  order_amount: number;
+}
+
+// 获取子工价支付参数
+export const getPayParamsForWorkPriceService = (params: WorkPricePayParams): Promise<any> => {
+  return request({ method: 'POST', url: `/wx-pay/work-price-items`, data: params, })
+}
+
 const normalize = (res: any): { success: boolean; data: any } => {
   const ok = res?.success === true || res?.code === 200 || res?.code === '0'
   const data = res?.data ?? res
@@ -29,112 +52,14 @@ export const createOrGetRoomByCraftsman = (params: {
   })
 }
 
-export const getConstructionProgressByOrderId = (
-  orderId: number | string,
-): Promise<{ success: boolean; data: any[] }> => {
-  return request({
-    method: 'GET',
-    url: `/construction-progress/order/${orderId}`,
-  })
-    .then((res: any) => {
-      const ok = res?.success === true || res?.code === 200 || res?.code === '0'
-      const raw = res?.data ?? res
-      const list = Array.isArray(raw) ? raw : raw?.list ?? []
-      return { success: !!ok, data: list }
-    })
-    .catch(() => ({ success: false, data: [] }))
+// 获取订单子工价列表
+export const getSubWorkService = (orderId: number): Promise<any> => {
+  return request({ method: 'GET', url: `/order/${orderId}/sub-groups` })
 }
 
-export const getSubWorkPricesByOrderId = (
-  orderId: number | string,
-): Promise<{ success: boolean; data: any[] }> => {
-  return request({
-    method: 'GET',
-    url: `/order/${orderId}/sub-groups`,
-  })
-    .then((res: any) => {
-      const ok = res?.success === true || res?.code === 200 || res?.code === '0'
-      const raw = res?.data ?? res
-      const list = Array.isArray(raw) ? raw : raw?.list ?? []
-      return { success: !!ok, data: list }
-    })
-    .catch(() => ({ success: false, data: [] }))
-}
-
+// 取消订单
 export const cancelOrderService = (params: {
   orderId: number
-}): Promise<{ success: boolean; message?: string }> => {
-  return request({
-    method: 'POST',
-    url: `/order/cancel`,
-    data: params,
-  })
-    .then((res: any) => ({
-      success: res?.success === true || res?.code === 200 || res?.code === '0',
-      message: res?.message,
-    }))
-    .catch(() => ({ success: false, message: '取消失败' }))
-}
-
-/** 根据订单ID获取辅材列表 */
-export const getMaterialsByOrderId = (orderId: number | string): Promise<any> => {
-  return request({
-    method: 'GET',
-    url: `/materials/order/${orderId}`,
-  })
-}
-
-/** 根据工价项ID和工匠ID获取辅材列表 */
-export const getMaterialsByWorkPriceItemIdAndCraftsman = (
-  workPriceItemId: number | string,
-  assignedCraftsmanId: number | string,
-): Promise<any> => {
-  return request({
-    method: 'GET',
-    url: `/work-price-item/${workPriceItemId}/materials/craftsman/${assignedCraftsmanId}`,
-  })
-}
-
-/** 验收工价 */
-export const acceptOrderWorkPriceService = (params: {
-  work_price_item_id: number
 }): Promise<any> => {
-  return request({
-    method: 'POST',
-    url: `/order/accept-single-work-price`,
-    data: params,
-  })
-}
-
-/** 验收辅材清单 */
-export const acceptOrderMaterialsService = (params: { materialsId: number }): Promise<any> => {
-  return request({
-    method: 'POST',
-    url: `/materials/accept`,
-    data: params,
-  })
-}
-
-/** 批量验收辅材清单 */
-export const batchAcceptOrderMaterialsService = (params: {
-  materialsIds: number[]
-}): Promise<any> => {
-  return request({
-    method: 'POST',
-    url: `/materials/batch-accept`,
-    data: params,
-  })
-}
-
-// 获取支付参数
-export const getPayParamsService = (params: {
-  order_no: string
-  order_amount: number | string
-  openid: string
-}): Promise<any> => {
-  return request({
-    method: 'POST',
-    url: `/wx-pay/order`,
-    data: params,
-  })
+  return request({ method: 'POST', url: `/order/cancel`, data: params, })
 }
