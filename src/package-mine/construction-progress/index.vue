@@ -73,6 +73,7 @@ const isCompleted = (item: any): boolean =>
   !!(item.end_time || (item.photos && item.photos.length > 0))
 
 const loadProgress = async (opts: any): Promise<void> => {
+
   if (opts?.orderId) {
     try {
       const res = await getConstructionProgressByOrderId(opts.orderId)
@@ -113,15 +114,17 @@ onLoad((options) => {
 })
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 page {
   height: 100%;
   overflow: hidden;
   background: $uni-bg-color-grey;
 }
 
+/* 必须用固定高度约束 flex 容器，否则 scroll-view 会被内容撑满，无法出现内部滚动 */
 .container {
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -131,7 +134,6 @@ page {
   flex: 1;
   overflow: hidden;
   box-sizing: border-box;
-  min-height: 0;
 }
 
 .progress-container {
