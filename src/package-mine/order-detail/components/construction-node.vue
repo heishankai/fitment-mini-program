@@ -1,5 +1,5 @@
 <template>
-  <view class="construction-node">
+  <view v-if="order_details?.construction_nodes?.length" class="construction-node">
     <node-description title="施工节点">
       <timeline-item
         v-for="(item, i) in order_details?.construction_nodes"

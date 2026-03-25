@@ -18,29 +18,44 @@ export const calculateFinalTotal = (order_details: any): string => {
   return totalPrice.plus(gangmasterCost).plus(serviceFee).toFixed(2)
 }
 
+const hasAssignedCraftsman = (item: any): boolean => {
+  const cid = item?.assigned_craftsman_id
+  return cid != null && cid !== ''
+}
+
 /**
  * 转为施工节点数据
  * @param orderDetail 订单详情
  * @param order_type 订单类型：工长订单:gangmaster , 工匠订单:craftsman
- * 1. 如果订单是工匠订单，则施工节点只有一个施工节点
- * 2. 如果订单是工长订单，则按 assigned_craftsman_id 分组，相同工匠的多个工价合并为一个施工节点
+ * 1. 未分配工匠的工价不产生施工节点
+ * 2. 工匠订单：仅首条工价且已分配工匠时有一个施工节点
+ * 3. 工长订单：按 assigned_craftsman_id 去重，同一工匠多条工价合并为一个节点
  */
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const resolveCraftsmanNodeData = (orderDetail: any): any => {
   const { parent_work_price_groups, order_type, ...rest } = orderDetail ?? {}
+  const groups = parent_work_price_groups ?? []
 
-  const seen = new Set<number>()
-  const construction_gangmaster_nodes = (parent_work_price_groups ?? []).filter((item: any) => {
+  const seen = new Set<unknown>()
+  const construction_gangmaster_nodes = groups.filter((item: any) => {
+    if (!hasAssignedCraftsman(item)) return false
     const id = item?.assigned_craftsman_id
-    if (seen?.has?.(id)) return false
-    seen?.add?.(id)
+    if (seen.has(id)) return false
+    seen.add(id)
     return true
   })
+
+  const first = groups[0]
+  const construction_nodes_craftsman =
+    first && hasAssignedCraftsman(first) ? [first] : []
 
   return {
     ...rest,
     order_type,
-    construction_nodes: order_type === ORDER_TYPE_ENUM.CRAFTSMAN ? [parent_work_price_groups?.[0]] : construction_gangmaster_nodes,
+    construction_nodes:
+      order_type === ORDER_TYPE_ENUM.CRAFTSMAN
+        ? construction_nodes_craftsman
+        : construction_gangmaster_nodes,
     parent_work_price_groups,
   }
 }
