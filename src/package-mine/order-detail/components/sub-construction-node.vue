@@ -87,7 +87,7 @@ const handleWorkPriceList = (item: any): void => {
   }
 
   uni.navigateTo({
-    url: `/package-mine/work-price-list/index?workPriceItemId=${item?.id}&craftsmanId=${item?.assigned_craftsman_id}&order_type=${order_type}`,
+    url: `/package-mine/work-price-list/index?orderId=${id}&workPriceItemId=${item?.id}&craftsmanId=${item?.assigned_craftsman_id}&order_type=${order_type}`,
   })
 }
 </script>

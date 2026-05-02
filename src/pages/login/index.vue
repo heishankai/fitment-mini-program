@@ -38,25 +38,44 @@
 
         <!-- Login Button -->
         <view class="btn-wrap">
-          <button class="login-btn" open-type="getPhoneNumber" @getphonenumber="handlePhoneLogin">
+          <button
+            class="login-btn"
+            :class="{ 'login-btn--muted': !termsAgreed }"
+            :open-type="termsAgreed ? 'getPhoneNumber' : ''"
+            @tap="onLoginBtnTap"
+            @getphonenumber="handlePhoneLogin"
+          >
             <text class="btn-text">一键登录</text>
             <uni-icons type="arrow-right" size="20" color="#fff" />
           </button>
         </view>
 
         <!-- Terms -->
-        <view class="terms" @tap="goToPrivacy">
-          <text class="terms-text">登录即代表同意</text>
-          <text class="terms-link">《用户协议》</text>
-          <text class="terms-text">和</text>
-          <text class="terms-link">《隐私政策》</text>
+        <view class="terms" @tap="toggleTermsAgreed">
+          <view class="terms-check" :class="{ 'terms-check--on': termsAgreed }">
+            <uni-icons v-if="termsAgreed" type="checkmarkempty" size="12" color="#fff" />
+          </view>
+          <text class="terms-line">
+            <text class="terms-text">我已阅读并同意</text>
+            <text class="terms-link" @tap.stop="goToUserAgreement">《用户协议》</text>
+            <text class="terms-text">和</text>
+            <text class="terms-link" @tap.stop="goToPrivacy">《隐私政策》</text>
+          </text>
         </view>
+      </view>
+    </view>
+
+    <!-- 自定义导航返回（与 labor-price-detail / renovation-form 一致） -->
+    <view class="sticky-header">
+      <view class="nav-back" :style="{ top: `${navBackTop}px` }" @tap="goBack">
+        <uni-icons type="left" size="22" color="#1e2222" />
       </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import { loginService, getUserPhoneNumberService } from './service'
 
 const features = [
@@ -65,11 +84,47 @@ const features = [
   { text: '售后保障，平台兜底' },
 ]
 
+const termsAgreed = ref(false)
+
+const navBackTop = computed(() => {
+  try {
+    const sys = uni.getSystemInfoSync()
+    const menuButton = wx.getMenuButtonBoundingClientRect()
+    const capsuleCenterY = menuButton.top + menuButton.height / 2
+    const containerSizePx = (72 * sys.windowWidth) / 750
+    return Math.max(capsuleCenterY - containerSizePx / 2, 10)
+  } catch {
+    return (48 * uni.getSystemInfoSync().windowWidth) / 750
+  }
+})
+
+const goBack = (): void => {
+  wx.switchTab({ url: '/pages/home/index' })
+}
+
+const toggleTermsAgreed = (): void => {
+  termsAgreed.value = !termsAgreed.value
+}
+
+const onLoginBtnTap = (): void => {
+  if (!termsAgreed.value) {
+    uni.showToast({ title: '请先勾选用户协议与隐私政策', icon: 'none' })
+  }
+}
+
+const goToUserAgreement = (): void => {
+  uni.navigateTo({ url: '/package-mine/privacy-policy/index' })
+}
+
 const goToPrivacy = (): void => {
   uni.navigateTo({ url: '/package-mine/privacy-policy/index' })
 }
 
 const handlePhoneLogin = async (e: any): Promise<void> => {
+  if (!termsAgreed.value) {
+    return
+  }
+
   const { code: phoneCode, errMsg } = e?.detail ?? {}
 
   if (errMsg !== 'getPhoneNumber:ok') {
@@ -265,6 +320,10 @@ const handlePhoneLogin = async (e: any): Promise<void> => {
   }
 }
 
+.login-btn--muted {
+  opacity: 0.55;
+}
+
 .btn-text {
   font-size: 32rpx;
   color: #fff;
@@ -272,16 +331,71 @@ const handlePhoneLogin = async (e: any): Promise<void> => {
 }
 
 .terms {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 0 8rpx;
+}
+
+.terms-check {
+  flex-shrink: 0;
+  width: 28rpx;
+  height: 28rpx;
+  margin-top: 6rpx;
+  border-radius: 6rpx;
+  border: 2rpx solid rgba($uni-color-primary, 0.35);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.terms-check--on {
+  background: $uni-color-primary;
+  border-color: $uni-color-primary;
+}
+
+.terms-line {
+  max-width: 100%;
+  font-size: 24rpx;
+  line-height: 40rpx;
   text-align: center;
 }
 
 .terms-text {
-  font-size: 24rpx;
-  color: rgba(#444a4a, 0.4);
+  font-size: inherit;
+  line-height: inherit;
+  color: rgba(#444a4a, 0.45);
 }
 
 .terms-link {
-  font-size: 24rpx;
+  font-size: inherit;
+  line-height: inherit;
   color: $uni-color-primary;
+}
+
+.sticky-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  pointer-events: none;
+
+  .nav-back {
+    position: absolute;
+    left: 32rpx;
+    z-index: 1000;
+    width: 72rpx;
+    height: 72rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    pointer-events: auto;
+    background: $uni-bg-color;
+  }
 }
 </style>

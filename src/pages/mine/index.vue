@@ -2,7 +2,7 @@
   <view class="container">
     <scroll-view class="scroll-view" scroll-y>
       <!-- 顶部品牌区 -->
-      <mine-header  :userInfo="userInfo" />
+      <mine-header :user-info="userInfo" @updated="loadUserInfo" />
 
       <!-- 我的装修（核心区域） -->
       <mine-renovation :order-list="orderList" />

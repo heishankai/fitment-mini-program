@@ -167,8 +167,8 @@ const formData = ref({
   district: '',
   latitude: null as number | null,
   longitude: null as number | null,
-  work_kind_name: null as string | null,
-  work_kind_code: null as string | null,
+  work_kind_name: '工长',
+  work_kind_code: 'GONGZHANG',
   contactPhone: '',
   contactName: '',
   serviceTime: '',
@@ -179,6 +179,7 @@ const loading = ref(false)
 const locationLoading = ref(false)
 const layoutPopupRef = ref<any>(null)
 const successPopupRef = ref<any>(null)
+const workKindList = ref<{ work_kind_code: string; work_kind_name: string }[]>([])
 
 const houseTypes = ['住宅公寓', '别墅', '自建房', '商铺', '办公楼']
 
@@ -198,8 +199,6 @@ const WORK_KIND_ICONS: [string, string][] = [
   ['工长', 'icon-a-anquananquanmao'],
 ]
 
-const workKindList = ref<{ work_kind_code: string; work_kind_name: string }[]>([])
-
 const layoutDisplay = computed(() => {
   const { room, bath } = formData.value.layout
   return room && bath ? `${room}房 ${bath}卫` : ''
@@ -210,7 +209,8 @@ function getWorkKindIcon(name: string): string {
   return WORK_KIND_ICONS.find(([key]) => name.includes(key))?.[1] ?? 'icon-gongren'
 }
 
-function selectWorkKind(item: { work_kind_code: string; work_kind_name: string }): void {
+const selectWorkKind = (item: { work_kind_code: string; work_kind_name: string }): void => {
+  console.log(item,'itemitemitem');
   formData.value.work_kind_code = item.work_kind_code
   formData.value.work_kind_name = item.work_kind_name
 }
@@ -281,18 +281,15 @@ onLoad(async (options?: any) => {
 
   const { data, success } = await getWorkKindListService()
 
-  if (success) workKindList.value = data
-  // 页面跳转带入的 id 用于默认选中服务类型（仅 id 即可，work_kind_name 可为空）
-  if (work_kind_code) {
-
-    formData.value.work_kind_code = work_kind_code
-    if (work_kind_name) {
-      formData.value.work_kind_name = decodeURIComponent(work_kind_name)
-    } else if (success && data?.length) {
-      const found = data.find((w: { work_kind_code: string }) => w.work_kind_code === work_kind_code)
-      if (found?.work_kind_name) formData.value.work_kind_name = found.work_kind_name
-    }
+  if (success){
+    workKindList.value = data
   }
+
+  if(work_kind_code){
+    formData.value.work_kind_code = work_kind_code 
+    formData.value.work_kind_name = decodeURIComponent(work_kind_name) 
+  }
+
   const userInfo = uni.getStorageSync('userInfo') ?? {}
   if (userInfo?.phone) formData.value.contactPhone = String(userInfo.phone)
   await initLocation()

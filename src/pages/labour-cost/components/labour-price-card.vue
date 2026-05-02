@@ -35,9 +35,7 @@
   </view>
 </template>
 
-
 <script setup lang="ts">
-
 interface LaborPriceItem {
   id: number
   work_title: string
@@ -53,16 +51,13 @@ defineProps<{
   item: LaborPriceItem
 }>()
 
-
 const handleTap = (item): void => {
-
   const { id } = item ?? {}
   uni.navigateTo({
-    url: `/package-labor-cost/labor-price-detail/index?id=${id}`
+    url: `/package-labor-cost/labor-price-detail/index?id=${id}`,
   })
 }
 </script>
-
 
 <style lang="scss" scoped>
 .card {
@@ -142,7 +137,7 @@ const handleTap = (item): void => {
   line-height: 1.5;
 }
 
-.info-row+.info-row {
+.info-row + .info-row {
   margin-top: 16rpx;
 }
 

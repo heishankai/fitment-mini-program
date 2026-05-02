@@ -5,15 +5,35 @@
     <view class="panel">
       <!-- 左侧分类导航 -->
       <view class="nav-container">
-        <scroll-view class="nav-scroll" scroll-y enhanced :show-scrollbar="false" :style="mainScrollStyle">
-          <view v-for="cat in categories" :key="cat.id" class="nav-item"
-            :class="{ active: selectedWorkKindId === cat.id }" @tap="selectWorkKind(cat.id)">
+        <scroll-view
+          class="nav-scroll"
+          scroll-y
+          enhanced
+          :show-scrollbar="false"
+          :style="mainScrollStyle"
+        >
+          <view
+            v-for="cat in categories"
+            :key="cat.id"
+            class="nav-item"
+            :class="{ active: selectedWorkKindId === cat.id }"
+            @tap="selectWorkKind(cat.id)"
+          >
             <view class="nav-indicator" v-if="selectedWorkKindId === cat.id" />
             <view class="nav-icon-wrap" :class="{ active: selectedWorkKindId === cat.id }">
-              <uni-icons v-if="cat.iconPrefix" :custom-prefix="cat.iconPrefix" :type="cat.iconType" size="22"
-                :color="selectedWorkKindId === cat.id ? '#fff' : '#9ca3af'" />
-              <uni-icons v-else :type="cat.iconType" size="22"
-                :color="selectedWorkKindId === cat.id ? '#fff' : '#9ca3af'" />
+              <uni-icons
+                v-if="cat.iconPrefix"
+                :custom-prefix="cat.iconPrefix"
+                :type="cat.iconType"
+                size="22"
+                :color="selectedWorkKindId === cat.id ? '#fff' : '#9ca3af'"
+              />
+              <uni-icons
+                v-else
+                :type="cat.iconType"
+                size="22"
+                :color="selectedWorkKindId === cat.id ? '#fff' : '#9ca3af'"
+              />
             </view>
             <text class="nav-text" :class="{ active: selectedWorkKindId === cat.id }">
               {{ cat.name }}
@@ -25,16 +45,20 @@
 
       <!-- 右侧内容 -->
       <view class="content-wrap">
-        <scroll-view class="content-scroll" scroll-y enhanced :show-scrollbar="false" :style="mainScrollStyle"
-          @scrolltolower="onScrollToLower">
+        <scroll-view
+          class="content-scroll"
+          scroll-y
+          enhanced
+          :show-scrollbar="false"
+          :style="mainScrollStyle"
+          @scrolltolower="onScrollToLower"
+        >
           <view class="section-header">
             <view class="section-title-wrap">
               <text class="section-title">
                 {{ selectedWorkKindName }}
               </text>
-              <text class="section-subtitle">
-                参考单价
-              </text>
+              <text class="section-subtitle"> 参考单价 </text>
             </view>
           </view>
 
@@ -44,9 +68,7 @@
               <text class="empty-text">加载中...</text>
             </view>
             <view v-else-if="priceList.length === 0" class="empty-tip">
-              <text class="empty-text">
-                该分类暂无工价数据
-              </text>
+              <text class="empty-text"> 该分类暂无工价数据 </text>
             </view>
 
             <labour-price-card v-for="item in priceList" :key="item.id" :item="item" />
@@ -87,14 +109,16 @@ const pageIndex = ref(1)
 const pageSize = 10
 const mainScrollStyle = ref({ height: '400px' })
 
-const selectedWorkKindName = computed(() =>
-  workKindList.value.find(k => k.work_kind_code === selectedWorkKindId.value)?.work_kind_name ?? ''
+const selectedWorkKindName = computed(
+  () =>
+    workKindList.value.find((k) => k.work_kind_code === selectedWorkKindId.value)?.work_kind_name ??
+    '',
 )
 
 // 带图标的分类（用于左侧导航）
 const categories = computed(() => {
   const def = { iconType: 'person', iconPrefix: '' }
-  return workKindList.value.map(k => {
+  return workKindList.value.map((k) => {
     const icon = ICON_MAP[k.work_kind_name] ?? def
     return { id: k.work_kind_code, name: k.work_kind_name, ...icon }
   })
@@ -106,9 +130,7 @@ const loadWorkKindList = async (): Promise<void> => {
     const { data, success } = await getWorkKindListService()
     if (success && data?.length) {
       // 工长排第一
-      workKindList.value = [...data].sort((a, b) =>
-        a.work_kind_name === '工长' ? -1 : b.work_kind_name === '工长' ? 1 : 0
-      )
+      workKindList.value = data ||[];
       selectedWorkKindId.value = workKindList.value[0].work_kind_code
       await loadPriceList()
     }
@@ -139,7 +161,6 @@ const loadPriceList = async (isLoadMore = false): Promise<void> => {
     if (!res.success) return
 
     const list = res.data ?? []
-   
 
     if (isLoadMore) {
       priceList.value = priceList.value.concat(list)
@@ -214,7 +235,6 @@ page {
   background: #f9fafb;
   border-right: 2rpx solid #efefef;
   border-radius: 48rpx 0 0 24rpx;
-
 
   .nav-scroll {
     width: 100%;
