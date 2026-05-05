@@ -39,7 +39,7 @@
         @schedule-tracking="goToScheduleTracking" @call-service="callService" />
 
       <!-- 隐私与条款 -->
-      <view v-if="userInfo?.nickname" class="section privacy-section">
+      <view v-if="isLoggedIn" class="section privacy-section">
         <view class="list-item" @tap="goToPrivacy">
           <view class="list-left">
             <uni-icons type="compose" size="16" color="#A8ADAD" />
@@ -53,7 +53,7 @@
       <view class="section logout-section">
         <view class="logout-btn" @tap="handleAuthAction">
           <uni-icons type="auth" size="16" color="#C0C5C5" />
-          <text class="logout-text">{{ userInfo?.nickname ? '退出登录' : '去登录' }}</text>
+          <text class="logout-text">{{ isLoggedIn ? '退出登录' : '去登录' }}</text>
         </view>
       </view>
 
@@ -76,6 +76,7 @@ import { getOrderListService } from '@/api/order'
 
 const userInfo = ref<any>({})
 const orderList = ref<any[]>([])
+const isLoggedIn = computed(() => !!userInfo.value?.token)
 // const orderCount = computed(() => orderList.value.length)
 
 // 加载订单列表
@@ -93,21 +94,28 @@ const loadOrderList = async (): Promise<void> => {
 
 // 页面显示时加载用户信息和订单
 onShow(() => {
-  loadUserInfo()
-  loadOrderList()
+  const hasLogin = loadUserInfo()
+  if (hasLogin) {
+    loadOrderList()
+  } else {
+    orderList.value = []
+  }
 })
 
 // 加载用户信息
-const loadUserInfo = (): void => {
+const loadUserInfo = (): boolean => {
   const data = wx.getStorageSync('userInfo')
-  if (data) {
+  if (data?.token) {
     userInfo.value = { ...data }
+    return true
   }
+  userInfo.value = {}
+  return false
 }
 
 // 登录/登出统一入口（点击时根据当前状态决定）
 const handleAuthAction = (): void => {
-  if (userInfo.value?.nickname) {
+  if (isLoggedIn.value) {
     wx.showModal({
       title: '退出登录',
       content: '确定要退出登录吗？',

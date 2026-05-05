@@ -29,10 +29,10 @@ const httpInterceptor = {
 
     // 4. 添加token (因为后端用 Basic Auth 进行身份验证)
     const userInfo = wx.getStorageSync('userInfo') ?? {}
-    const token = `Bearer ${userInfo?.token}`
+    const token = userInfo?.token
 
     if (token) {
-      options.header.Authorization = token
+      options.header.Authorization = `Bearer ${token}`
     }
 
     return options
@@ -65,7 +65,11 @@ export const request = <T>(options: UniApp.RequestOptions): Promise<Data<T>> => 
           // 401错误  -> 清理用户信息，跳转到登录页
           console.log('401错误')
           wx.removeStorageSync('userInfo')
-          uni.navigateTo({ url: '/pages/login/index' })
+          const pages = getCurrentPages()
+          const currentPage = pages[pages.length - 1]
+          if (currentPage?.route !== 'pages/login/index') {
+            uni.navigateTo({ url: '/pages/login/index' })
+          }
           return
         }
 
