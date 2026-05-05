@@ -191,6 +191,13 @@
           }
         },
         {
+          "path": "payment-record/index",
+          "style": {
+            "navigationBarTitleText": "付款记录",
+            "disableScroll": true
+          }
+        },
+        {
           "path": "craftsman-service/index",
           "style": {
             "navigationBarTitleText": "联系工匠",

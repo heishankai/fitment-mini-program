@@ -4,6 +4,8 @@ interface OrderFeePayParams {
   pay_type: 'order_platform_service_fee' | 'order_gangmaster_cost';
   order_id?: number;
   order_amount: number;
+  /** 订单下多笔平台服务费 / 工长费用时，支付对应下标数组（从 0 开始） */
+  fee_indexes?: number[];
 }
 
 // 获取订单费用支付参数（平台服务费、工长费用）

@@ -1,21 +1,70 @@
 import Decimal from 'decimal.js'
 import { ORDER_TYPE_ENUM } from '@/constant'
 
+type FeeAmountDetail = {
+  index?: number | string | null
+  amount?: number | string | null
+}
+
+type OrderCostLike = {
+  total_price?: number | string | null
+  total_service_fee?: number | string | null
+  total_service_fee_details?: FeeAmountDetail[] | null
+  order_type?: string | null
+  gangmaster_cost?: number | string | null
+  gangmaster_cost_details?: FeeAmountDetail[] | null
+}
+
 /**
  * 计算最终总价（使用 decimal.js 避免浮点精度问题）
- * @param order_details 订单详情
- * @returns 最终总价，保留 2 位小数
+ * 与「费用总计」区块展示一致：
+ * 工价合计 + 平台服务费（total_service_fee_details / total_service_fee）
+ * + 工长费用（仅工长单：gangmaster_cost_details / gangmaster_cost）
  */
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export const calculateFinalTotal = (order_details: any): string => {
-  const { total_price, gangmaster_cost, total_service_fee, order_type } = order_details ?? {}
+const sumFeeDetailAmounts = (details: unknown): Decimal => {
+  if (!Array.isArray(details) || details.length === 0) return new Decimal(0)
+  return details.reduce(
+    (acc: Decimal, item: any) => acc.plus(new Decimal(Number(item?.amount) || 0)),
+    new Decimal(0),
+  )
+}
 
-  const totalPrice = new Decimal(total_price ?? 0)
-  const serviceFee = new Decimal(total_service_fee ?? 0)
-  const gangmasterCost =
-    order_type === ORDER_TYPE_ENUM.CRAFTSMAN ? new Decimal(gangmaster_cost ?? 0) : new Decimal(0)
+/** 按后端 index 排序的费用明细（展示顺序） */
+export const sortFeeDetailsByIndex = <T extends { index?: number | string | null }>(
+  details: T[],
+): T[] => {
+  if (!Array.isArray(details)) return []
+  return [...details].sort((a, b) => Number(a?.index ?? 0) - Number(b?.index ?? 0))
+}
 
-  return totalPrice.plus(gangmasterCost).plus(serviceFee).toFixed(2)
+/** 主单：平台服务费合计（与 order-cost 列表展示同源） */
+export const sumMainOrderPlatformServiceFee = (
+  order_details: OrderCostLike | null | undefined,
+): Decimal => {
+  const { total_service_fee_details, total_service_fee } = order_details ?? {}
+  if (Array.isArray(total_service_fee_details) && total_service_fee_details.length > 0) {
+    return sumFeeDetailAmounts(total_service_fee_details)
+  }
+  return new Decimal(total_service_fee ?? 0)
+}
+
+/** 主单：工长费用合计（仅工长订单；与 order-cost 工长区块展示同源） */
+export const sumMainOrderGangmasterFeeForDisplay = (
+  order_details: OrderCostLike | null | undefined,
+): Decimal => {
+  const { order_type, gangmaster_cost_details, gangmaster_cost } = order_details ?? {}
+  if (order_type !== ORDER_TYPE_ENUM.GANGMASTER) return new Decimal(0)
+  if (Array.isArray(gangmaster_cost_details) && gangmaster_cost_details.length > 0) {
+    return sumFeeDetailAmounts(gangmaster_cost_details)
+  }
+  return new Decimal(gangmaster_cost ?? 0)
+}
+
+export const calculateFinalTotal = (order_details: OrderCostLike | null | undefined): string => {
+  const totalPrice = new Decimal(order_details?.total_price ?? 0)
+  const serviceFee = sumMainOrderPlatformServiceFee(order_details)
+  const gangmasterCost = sumMainOrderGangmasterFeeForDisplay(order_details)
+  return totalPrice.plus(serviceFee).plus(gangmasterCost).toFixed(2)
 }
 
 const hasAssignedCraftsman = (item: any): boolean => {
@@ -60,34 +109,6 @@ export const resolveCraftsmanNodeData = (orderDetail: any): any => {
   }
 }
 
-/**
- * 子工价分组（/order/:id/sub-groups）→ 与主单 construction_nodes 相同维度的施工节点
- * 仅处理已分配工匠的工价项；组内按 assigned_craftsman_id 去重，取该工匠首条作为入口（与工长单主节点一致）
- * 未分配（null/空）的条目不产生节点；接口仍可为多 work_group 数组，无工匠的组会被自然跳过
- */
-export const resolveSubWorkConstructionNodes = (subWorkGroups: any[] | null | undefined): any[] => {
-  if (!Array.isArray(subWorkGroups)) return []
-
-  const nodes: any[] = []
-  for (const group of subWorkGroups) {
-    const items = group?.sub_work_price_groups
-    if (!Array.isArray(items) || !items.length) continue
-
-    const seenCraftsman = new Set<number>()
-    for (const item of items) {
-      const cid = item?.assigned_craftsman_id
-      if (cid == null || cid === '') continue
-      const idNum = Number(cid)
-      if (Number.isNaN(idNum) || seenCraftsman.has(idNum)) continue
-      seenCraftsman.add(idNum)
-      nodes.push({
-        ...item,
-        work_group_id: group?.work_group_id ?? item?.work_group_id,
-      })
-    }
-  }
-  return nodes
-}
 
 /** 子工单：所有 sub_work_price_groups 行上 total_service_fee 合计（展示用，保留 2 位小数） */
 export const sumSubWorkPriceGroupsLineServiceFee = (
@@ -147,4 +168,3 @@ export const buildSubWorkSubServiceFeeBatchPayParams = (
   }
   return { workPriceItemIds, order_amount: Number(unpaidSum.toFixed(2)) }
 }
-
