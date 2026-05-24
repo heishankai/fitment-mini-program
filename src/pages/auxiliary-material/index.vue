@@ -229,14 +229,14 @@ page {
 .product-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 32rpx;
+  justify-content: space-between;
 }
 
 .product-card {
-  width: calc(50% - 16rpx);
+  width: 327rpx;
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  margin-bottom: 32rpx;
 }
 
 /* 🔥 核心修复：padding 比例方案 */
@@ -270,18 +270,25 @@ page {
 .product-info {
   display: flex;
   flex-direction: column;
-  gap: 8rpx;
+  margin-top: 16rpx;
 }
 
 .product-name {
   font-size: 28rpx;
   color: #1e2222;
+  line-height: 40rpx;
+  min-height: 80rpx;
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .product-price-wrap {
   display: flex;
   align-items: baseline;
-  gap: 4rpx;
+  margin-top: 8rpx;
   color: #2d635e;
 }
 

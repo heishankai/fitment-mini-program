@@ -1,7 +1,7 @@
 <template>
   <view class="project-overview">
     <view class="title">项目概览</view>
-    <view class="type">{{ `${order_details?.housing_name} ${order_details?.area}m²` }}</view>
+    <view class="type">{{ `${order_details?.housing_name || ''} ${order_details?.area}m²` }}</view>
 
     <view class="address">
       <uni-icons custom-prefix="iconfont" type="icon-map" size="14" color="#999" />

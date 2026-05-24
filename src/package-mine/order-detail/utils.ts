@@ -67,11 +67,6 @@ export const calculateFinalTotal = (order_details: OrderCostLike | null | undefi
   return totalPrice.plus(serviceFee).plus(gangmasterCost).toFixed(2)
 }
 
-const hasAssignedCraftsman = (item: any): boolean => {
-  const cid = item?.assigned_craftsman_id
-  return cid != null && cid !== ''
-}
-
 const getWorkKindKey = (item: any): string => {
   const key = item?.work_kind_code ?? item?.work_kind_name ?? item?.id
   return key == null ? '' : String(key)
@@ -88,16 +83,26 @@ const buildConstructionNode = (items: any[]): any => {
   }
 }
 
-/** 工长单：已分配按工匠去重；未分配按工种去重（parent 组可能多条对应同一施工节点） */
+const buildGangmasterOwnConstructionNode = (orderDetail: any): any | null => {
+  if (orderDetail?.order_type !== ORDER_TYPE_ENUM.GANGMASTER) return null
+  return {
+    id: `gangmaster-${orderDetail?.id ?? ''}`,
+    order_id: orderDetail?.id,
+    work_kind_name: orderDetail?.work_kind_name || '工长',
+    work_kind_code: orderDetail?.work_kind_code || 'GONGZHANG',
+    is_gangmaster_own_node: true,
+    work_price_item_ids: [],
+  }
+}
+
+/** 工长单：按工种去重；同一工种下多个工匠合并到一个施工节点 */
 const buildGangmasterConstructionNodes = (groups: any[]): any[] => {
   const groupMap = new Map<string, any[]>()
 
   for (const item of groups) {
     const kindKey = getWorkKindKey(item)
     if (!kindKey) continue
-    const groupKey = hasAssignedCraftsman(item)
-      ? `craftsman:${item.assigned_craftsman_id}`
-      : `kind:${kindKey}`
+    const groupKey = `kind:${kindKey}`
     const items = groupMap.get(groupKey) ?? []
     items.push(item)
     groupMap.set(groupKey, items)
@@ -117,7 +122,7 @@ const buildCraftsmanConstructionNodes = (groups: any[], orderDetail: any): any[]
 /**
  * parent_work_price_groups 为工价分组；施工节点需聚合后展示：
  * - 工匠单：1 个节点
- * - 工长单：已分配工匠各 1 个节点；未分配按工种各 1 个节点
+ * - 工长单：同一工种 1 个节点，多个工匠的数据在节点内合并查看
  */
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const resolveCraftsmanNodeData = (orderDetail: any): any => {
@@ -127,7 +132,10 @@ export const resolveCraftsmanNodeData = (orderDetail: any): any => {
   const construction_nodes =
     order_type === ORDER_TYPE_ENUM.CRAFTSMAN
       ? buildCraftsmanConstructionNodes(groups, orderDetail)
-      : buildGangmasterConstructionNodes(groups)
+      : [
+          buildGangmasterOwnConstructionNode(orderDetail),
+          ...buildGangmasterConstructionNodes(groups),
+        ].filter(Boolean)
 
   return {
     ...rest,

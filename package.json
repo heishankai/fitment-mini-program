@@ -2,8 +2,8 @@
   "name": "fitment-mini-program",
   "version": "0.0.0",
   "engines": {
-    "node": "22.21.1",
-    "pnpm": "10.27.0"
+    "node": ">=22.21.1",
+    "pnpm": ">=10.27.0"
   },
   "packageManager": "pnpm@10.27.0",
   "scripts": {

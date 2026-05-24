@@ -10,9 +10,18 @@
     >
       <!-- 工价列表 -->
       <view v-if="work_price_list?.length" class="work-price-list">
+        <view class="summary-card">
+          <view class="summary-label">工价合计</view>
+          <view class="summary-value">¥{{ work_price_total }}</view>
+        </view>
         <view v-for="item in work_price_list" :key="item?.id" class="item-card">
           <view class="item-header">
-            <view class="work-title">{{ item?.work_title }}</view>
+            <view class="work-title" @tap.stop="goWorkPriceDetail(item)">
+              <text class="work-title-text">{{ item?.work_title }}</text>
+              <view class="work-title-icon">
+                <uni-icons type="right" size="14" color="#2d635e" />
+              </view>
+            </view>
             <view class="unit-price">¥{{ item?.work_price }}/{{ item?.labour_cost_name }}</view>
           </view>
           <view class="item-content">
@@ -23,27 +32,12 @@
           </view>
           <view class="item-footer">
             <view class="subtotal">小计 ¥{{ getItemSubtotal(item) }}</view>
-            <view class="actions">
-              <view
-                class="btn-pay"
-                v-if="isActionableWorkPrice(item) && !item?.is_paid"
-                @tap="handlePay(item)"
-              >
-                确认支付
+            <view class="status-group">
+              <view class="status-tag" :class="{ active: item?.is_paid }">
+                {{ item?.is_paid ? '已支付' : '未支付' }}
               </view>
-              <view
-                v-if="isActionableWorkPrice(item) && item?.is_paid"
-                class="accept-btn"
-                :class="{ accepted: item?.is_accepted }"
-                @tap="handleAcceptWorkPrice(item)"
-              >
-                <uni-icons
-                  v-if="item?.is_accepted"
-                  type="checkmarkempty"
-                  size="12"
-                  color="#07c160"
-                />
-                <text>{{ item?.is_accepted ? '已验收' : '确认验收' }}</text>
+              <view class="status-tag" :class="{ active: item?.is_accepted }">
+                {{ item?.is_accepted ? '已验收' : '未验收' }}
               </view>
             </view>
           </view>
@@ -58,17 +52,19 @@
     <view class="bottom-bar" v-if="showActionBar">
       <view
         class="bottom-bar-item"
-        v-if="showBatchPay(actionable_work_price_list)"
+        v-if="showBatchPay(work_price_list)"
         @tap="handleBatchPay"
       >
-        一键支付
+        <uni-icons type="wallet" size="20" color="#fff" />
+        <text>一键支付</text>
       </view>
       <view
         class="bottom-bar-item"
-        v-if="showBatchAccept(actionable_work_price_list)"
+        v-if="showBatchAccept(work_price_list)"
         @tap="handleBatchAccept"
       >
-        一键验收
+        <uni-icons type="checkmarkempty" size="20" color="#fff" />
+        <text>一键验收</text>
       </view>
     </view>
   </view>
@@ -76,17 +72,17 @@
 
 <script setup lang="ts">
 import { ORDER_TYPE_ENUM } from '@/constant'
+import Decimal from 'decimal.js'
 import {
   getWorkPriceListByWorkPriceItemId,
   getWorkPriceListByOrderId,
   getPayParamsForWorkPriceService,
-  acceptOrderWorkPriceService,
   acceptOrderWorkPriceBatchService,
 } from './service'
 import { getItemSubtotal, showBatchPay, showBatchAccept, flattenWorkPriceList } from './utils'
 
 const params = ref<any>({})
-const work_price_list = ref<any>({})
+const work_price_list = ref<any[]>([])
 const isTriggered = ref(false)
 
 const normalizeParam = (value: unknown): string => {
@@ -104,24 +100,17 @@ const hasValidCraftsmanId = (value: unknown): boolean => {
   return text !== '' && text !== 'null' && text !== 'undefined'
 }
 
-const isActionableWorkPrice = (item: any): boolean => {
-  if (params.value?.order_type === ORDER_TYPE_ENUM.GANGMASTER) {
-    return hasValidCraftsmanId(item?.assigned_craftsman_id)
-  }
-  return true
-}
-
-const actionable_work_price_list = computed(() => {
-  const list = work_price_list.value
-  if (!Array.isArray(list)) return []
-  return list.filter(isActionableWorkPrice)
-})
-
 const showActionBar = computed(
   () =>
-    showBatchPay(actionable_work_price_list.value) ||
-    showBatchAccept(actionable_work_price_list.value),
+    showBatchPay(work_price_list.value) ||
+    showBatchAccept(work_price_list.value),
 )
+
+const work_price_total = computed(() => {
+  return work_price_list.value
+    .reduce((sum, item) => sum.plus(getItemSubtotal(item)), new Decimal(0))
+    .toFixed(2)
+})
 
 const parseWorkPriceItemIds = (value: unknown): number[] =>
   normalizeParam(value)
@@ -152,6 +141,18 @@ const filterWorkPriceListByNode = (list: any[], paramsValue: any): any[] => {
   }
 
   return list
+}
+
+const goWorkPriceDetail = (item: any): void => {
+  const workPriceId = item?.work_price_id
+  if (!workPriceId) {
+    uni.showToast({ title: '暂无工价详情', icon: 'none' })
+    return
+  }
+
+  uni.navigateTo({
+    url: `/package-labor-cost/labor-price-detail/index?id=${workPriceId}`,
+  })
 }
 
 const loadWorkPriceListByOrderId = async (
@@ -195,46 +196,10 @@ const loadWorkPriceList = async (paramsValue): Promise<void> => {
   work_price_list.value = flattenWorkPriceList(main_work_price_group, sub_work_price_groups)
 }
 
-/** 单项支付 */
-const handlePay = (item: any): void => {
-  if (item?.is_paid || !isActionableWorkPrice(item)) return
-  uni?.vibrateShort()
-  wx.showModal({
-    title: '确认支付',
-    content: '确定要支付此项工价吗？',
-    confirmText: '确定',
-    cancelText: '取消',
-    confirmColor: '#2d635e',
-    success: async (modalRes) => {
-      if (!modalRes.confirm) return
-      const amount = Number(item?.settlement_amount) || Number(getItemSubtotal(item)) || 0
-      uni.showLoading({ title: '获取支付参数...', mask: true })
-      const { success, data } = await getPayParamsForWorkPriceService({
-        pay_type: 'work_price_single',
-        workPriceItemId: item?.id,
-        order_amount: amount,
-      })
-      uni.hideLoading()
-      if (!success) {
-        uni.showToast({ title: '获取支付参数失败', icon: 'none' })
-        return
-      }
-      uni.requestPayment({
-        provider: 'wxpay',
-        ...data,
-        success: () => {
-          uni.showToast({ title: '支付成功', icon: 'success' })
-          loadWorkPriceList(params.value)
-        },
-      })
-    },
-  })
-}
-
 /** 一键支付：批量支付全部未支付的工价 */
 const handleBatchPay = async (): Promise<void> => {
   uni?.vibrateShort()
-  const list = actionable_work_price_list.value
+  const list = work_price_list.value
   if (!list?.length) {
     uni.showToast({ title: '工价信息错误', icon: 'none' })
     return
@@ -283,7 +248,7 @@ const handleBatchPay = async (): Promise<void> => {
 /** 一键验收：批量验收全部 已支付未验收 的工价 */
 const handleBatchAccept = async (): Promise<void> => {
   uni?.vibrateShort()
-  const list = actionable_work_price_list.value
+  const list = work_price_list.value
 
   if (!list?.length) {
     uni.showToast({ title: '工价信息错误', icon: 'none' })
@@ -308,26 +273,6 @@ const handleBatchAccept = async (): Promise<void> => {
       const { success } = await acceptOrderWorkPriceBatchService({
         work_price_item_ids: unacceptedIds,
       })
-      if (success) {
-        uni.showToast({ title: '验收成功', icon: 'success' })
-        loadWorkPriceList(params.value)
-      }
-    },
-  })
-}
-
-// 单项验收
-const handleAcceptWorkPrice = async (item: any): Promise<void> => {
-  if (item?.is_accepted || !isActionableWorkPrice(item)) return
-  wx.showModal({
-    title: '确认验收',
-    content: '确定要验收此项工价吗？',
-    confirmText: '确定',
-    cancelText: '取消',
-    confirmColor: '#2d635e',
-    success: async (result) => {
-      if (!result.confirm) return
-      const { success } = await acceptOrderWorkPriceService({ work_price_item_id: item?.id })
       if (success) {
         uni.showToast({ title: '验收成功', icon: 'success' })
         loadWorkPriceList(params.value)
@@ -368,6 +313,28 @@ page {
   gap: 24rpx;
 }
 
+.summary-card {
+  padding: 28rpx;
+  background: linear-gradient(135deg, #2d635e 0%, #3f7c75 100%);
+  border-radius: $uni-border-radius-base;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 8rpx 24rpx rgba(45, 99, 94, 0.18);
+
+  .summary-label {
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 26rpx;
+    font-weight: 500;
+  }
+
+  .summary-value {
+    color: #fff;
+    font-size: 38rpx;
+    font-weight: 700;
+  }
+}
+
 .item-card {
   padding: 28rpx;
   background: $uni-bg-color;
@@ -387,6 +354,24 @@ page {
       font-size: 30rpx;
       font-weight: 600;
       line-height: 1.4;
+      position: relative;
+      padding-right: 34rpx;
+      min-width: 0;
+
+      .work-title-text {
+        word-break: break-all;
+      }
+
+      .work-title-icon {
+        position: absolute;
+        right: 0;
+        top: 7rpx;
+        width: 28rpx;
+        height: 28rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
     }
 
     .unit-price {
@@ -432,37 +417,23 @@ page {
       font-weight: 600;
     }
 
-    .actions {
+    .status-group {
       display: flex;
-      gap: 16rpx;
+      gap: 12rpx;
+      flex-wrap: wrap;
     }
 
-    .btn-pay {
-      padding: 12rpx 28rpx;
-      background: $uni-color-primary;
-      border-radius: 24rpx;
-      font-size: 24rpx;
-      color: #fff;
-      font-weight: 500;
-    }
-
-    .accept-btn {
-      padding: 12rpx 28rpx;
-      border-radius: 24rpx;
+    .status-tag {
+      padding: 8rpx 18rpx;
+      border-radius: 999rpx;
+      background: $uni-bg-color-grey;
+      color: $uni-text-color-grey;
       font-size: 24rpx;
       font-weight: 500;
-      color: #fff;
-      background: $uni-color-primary;
-      display: flex;
-      align-items: center;
-      gap: 8rpx;
 
-      &.accepted {
-        background: transparent;
+      &.active {
+        background: rgba(7, 193, 96, 0.1);
         color: $uni-color-success;
-        padding: 0;
-        font-size: 24rpx;
-        font-weight: 400;
       }
     }
   }
@@ -482,6 +453,7 @@ page {
   padding-right: 0;
   justify-content: center;
   align-items: center;
+  gap: 8px;
 
   border-radius: 14px;
   background: #2d635e;

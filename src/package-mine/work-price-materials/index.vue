@@ -1,4 +1,4 @@
-<!-- 辅材清单页：展示订单辅材列表，支持单项/批量验收 -->
+<!-- 辅材清单页：展示订单辅材列表，支持批量支付/批量验收 -->
 <template>
   <view class="container">
     <scroll-view
@@ -28,7 +28,10 @@
           </view>
 
           <view class="material-info">
-            <text class="material-name">{{ commodity.commodity_name }}</text>
+            <view class="material-name-row" @tap.stop="handleMaterialDetail(commodity)">
+              <text class="material-name">{{ commodity.commodity_name }}</text>
+              <uni-icons type="right" size="14" color="#b8b8b8" />
+            </view>
             <text class="material-meta">
               ¥{{ formatCost(getUnitPrice(commodity)) }}/{{ commodity.commodity_unit }} ×
               {{ commodity.quantity }}
@@ -42,19 +45,18 @@
                 v-if="commodity.is_paid"
                 class="accept-status"
                 :class="{ accepted: commodity.is_accepted }"
-                @tap.stop="handleAcceptMaterial(commodity)"
               >
                 <uni-icons
                   type="checkmarkempty"
-                  size="14"
-                  :color="commodity.is_accepted ? '#2d635e' : '#fff'"
+                  size="13"
+                  :color="commodity.is_accepted ? '#2d635e' : '#909399'"
                 />
-                <text>{{ commodity.is_accepted ? '已验收' : '确认验收' }}</text>
+                <text>{{ commodity.is_accepted ? '已验收' : '待验收' }}</text>
               </view>
 
-              <view v-else class="accept-status" @tap.stop="handlePay(commodity)">
-                <uni-icons type="checkmarkempty" size="14" color="#fff" />
-                <text>确认支付</text>
+              <view v-else class="accept-status unpaid">
+                <uni-icons type="wallet" size="13" color="#909399" />
+                <text>待支付</text>
               </view>
             </view>
           </view>
@@ -96,7 +98,6 @@ import EmptyState from '@/components/empty-state.vue'
 import {
   getMaterialsByWorkPriceItemIdAndCraftsman,
   getMaterialsByOrderId,
-  acceptOrderMaterialsService,
   batchAcceptOrderMaterialsService,
 } from './service'
 import { formatCost, previewImage } from '@/utils'
@@ -179,6 +180,16 @@ const getUnitPrice = (commodity: any): number => {
   return Number(commodity.settlement_amount) / Number(commodity.quantity)
 }
 
+/** 跳转辅材详情 */
+const handleMaterialDetail = (commodity: any): void => {
+  const id = commodity?.commodity_id ?? commodity?.id
+  if (!id) {
+    uni.showToast({ title: '辅材信息错误', icon: 'none' })
+    return
+  }
+  uni.navigateTo({ url: `/package-auxiliary-material/product-detail/index?id=${id}` })
+}
+
 /** 根据 orderType 调用对应接口获取辅材数据 */
 const fetchMaterials = async (): Promise<any> => {
   if (orderType.value === 'gangmaster' && hasValidCraftsmanId(assignedCraftsmanId.value)) {
@@ -210,11 +221,11 @@ const onRefresherrefresh = async (): Promise<void> => {
   isTriggered.value = false
 }
 
-/** 显示验收确认弹窗，返回用户是否点击确定 */
-const showConfirmModal = (content: string): Promise<boolean> =>
+/** 显示确认弹窗，返回用户是否点击确定 */
+const showConfirmModal = (title: string, content: string): Promise<boolean> =>
   new Promise((resolve) => {
     wx.showModal({
-      title: '验收辅材',
+      title,
       content,
       confirmText: '确定',
       cancelText: '取消',
@@ -223,23 +234,6 @@ const showConfirmModal = (content: string): Promise<boolean> =>
       fail: () => resolve(false),
     })
   })
-
-/** 单项辅材验收 */
-const handleAcceptMaterial = async (materials: any): Promise<void> => {
-  const { id, is_accepted } = materials ?? {}
-
-  if (is_accepted) return // 已验收则不再处理
-
-  uni?.vibrateShort()
-  if (!(await showConfirmModal('确定要验收此项辅材吗？'))) return
-
-  const { success } = await acceptOrderMaterialsService({ materialsId: id })
-
-  if (success) {
-    uni.showToast({ title: '验收成功', icon: 'none' })
-    await loadMaterials()
-  }
-}
 
 /** 全部支付 */
 const handleBatchPay = async (): Promise<void> => {
@@ -262,36 +256,29 @@ const handleBatchPay = async (): Promise<void> => {
   )
   const materialsIds = unpaidList.map((c: any) => c.id)
 
-  wx.showModal({
-    title: '确认支付',
-    content: `确定要支付 ${unpaidList?.length ?? 0} 项辅材吗？`,
-    confirmText: '确定',
-    cancelText: '取消',
-    confirmColor: '#2d635e',
-    success: async (modalRes) => {
-      if (!modalRes.confirm) return
+  if (!(await showConfirmModal('确认支付', `确定要支付 ${unpaidList.length} 项辅材吗？`))) {
+    return
+  }
 
-      uni.showLoading({ title: '获取支付参数...', mask: true })
-      const { success, data } = await getPayParamsService({
-        pay_type: 'material_batch',
-        materialsIds,
-        order_amount: totalAmount,
-      })
-      uni.hideLoading()
+  uni.showLoading({ title: '获取支付参数...', mask: true })
+  const { success, data } = await getPayParamsService({
+    pay_type: 'material_batch',
+    materialsIds,
+    order_amount: totalAmount,
+  })
+  uni.hideLoading()
 
-      if (!success) {
-        uni.showToast({ title: '获取支付参数失败', icon: 'none' })
-        return
-      }
+  if (!success) {
+    uni.showToast({ title: '获取支付参数失败', icon: 'none' })
+    return
+  }
 
-      uni.requestPayment({
-        provider: 'wxpay',
-        ...data,
-        success: () => {
-          uni.showToast({ title: '支付成功', icon: 'success' })
-          loadMaterials()
-        },
-      })
+  uni.requestPayment({
+    provider: 'wxpay',
+    ...data,
+    success: () => {
+      uni.showToast({ title: '支付成功', icon: 'success' })
+      loadMaterials()
     },
   })
 }
@@ -311,7 +298,7 @@ const handleBatchAccept = async (): Promise<void> => {
     return
   }
 
-  if (!(await showConfirmModal(`确定要验收 ${unacceptedIds.length} 项辅材吗？`))) return
+  if (!(await showConfirmModal('验收辅材', `确定要验收 ${unacceptedIds.length} 项辅材吗？`))) return
 
   uni.showLoading({ title: '验收中...', mask: true })
   const { success } = await batchAcceptOrderMaterialsService({ materialsIds: unacceptedIds })
@@ -321,43 +308,6 @@ const handleBatchAccept = async (): Promise<void> => {
     uni.showToast({ title: '验收成功', icon: 'success' })
     await loadMaterials()
   }
-}
-
-// 确认支付
-const handlePay = async (materials: any): Promise<void> => {
-  uni.vibrateShort()
-  const { id, is_paid, settlement_amount } = materials ?? {}
-  if (is_paid) return
-
-  wx.showModal({
-    title: '确认支付',
-    content: '确定要支付此项辅材吗？',
-    confirmText: '确定',
-    cancelText: '取消',
-    confirmColor: '#2d635e',
-    success: async (modalRes) => {
-      if (!modalRes.confirm) return
-
-      // 调用服务端接口 - 获取支付参数
-      const { success, data } = await getPayParamsService({
-        pay_type: 'material_single',
-        materialId: id,
-        order_amount: settlement_amount,
-      })
-
-      if (!success) return
-
-      // 调用支付接口
-      uni.requestPayment({
-        provider: 'wxpay',
-        ...data,
-        success: () => {
-          uni.showToast({ title: '支付成功', icon: 'success' })
-          loadMaterials()
-        },
-      })
-    },
-  })
 }
 
 // 页面加载时解析参数并拉取数据
@@ -430,17 +380,26 @@ page {
       flex-direction: column;
       gap: 16rpx;
 
-      .material-name {
-        font-size: 36rpx;
-        font-weight: 600;
-        color: $uni-text-color;
-        line-height: 1.4;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        -webkit-box-orient: vertical;
+      .material-name-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 8rpx;
+        min-width: 0;
+
+        .material-name {
+          flex: 1;
+          min-width: 0;
+          font-size: 36rpx;
+          font-weight: 600;
+          color: $uni-text-color;
+          line-height: 1.4;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          line-clamp: 2;
+          -webkit-box-orient: vertical;
+        }
       }
 
       .material-meta {
@@ -466,15 +425,17 @@ page {
           font-size: 24rpx;
           padding: 12rpx 24rpx;
           border-radius: 16rpx;
+          color: #909399;
+          background: #f5f7fa;
 
           &.accepted {
             color: $uni-color-success;
-            padding: 0;
+            background: #edf7f2;
           }
 
-          &:not(.accepted) {
-            color: #fff;
-            background: $uni-color-primary;
+          &.unpaid {
+            color: #909399;
+            background: #f5f7fa;
           }
         }
       }
