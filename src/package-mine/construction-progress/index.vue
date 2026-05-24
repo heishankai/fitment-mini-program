@@ -69,17 +69,41 @@ const params = ref<any>({ workPriceItemId: '', craftsmanId: '', orderId: '' })
 const progressList = ref<any[]>([])
 const isTriggered = ref(false)
 
+const normalizeParam = (value: unknown): string => {
+  if (value == null) return ''
+  const text = String(value)
+  try {
+    return decodeURIComponent(text)
+  } catch {
+    return text
+  }
+}
+
+const filterProgressByWorkKind = (list: any[], opts: any): any[] => {
+  const workKindCode = normalizeParam(opts?.workKindCode)
+  if (workKindCode) return list.filter((item) => item?.work_kind_code === workKindCode)
+
+  const workKindName = normalizeParam(opts?.workKindName)
+  if (workKindName) return list.filter((item) => item?.work_kind_name === workKindName)
+
+  return list
+}
+
+const hasValidCraftsmanId = (value: unknown): boolean => {
+  const text = normalizeParam(value)
+  return text !== '' && text !== 'null' && text !== 'undefined'
+}
+
 const isCompleted = (item: any): boolean =>
   !!(item.end_time || (item.photos && item.photos.length > 0))
 
 const loadProgress = async (opts: any): Promise<void> => {
-
   if (opts?.orderId) {
     try {
       const res = await getConstructionProgressByOrderId(opts.orderId)
       const data = res?.data ?? res
       const list = Array.isArray(data) ? data : (data?.list ?? [])
-      progressList.value = list
+      progressList.value = filterProgressByWorkKind(list, opts)
     } catch {
       progressList.value = []
     }
@@ -87,7 +111,7 @@ const loadProgress = async (opts: any): Promise<void> => {
   }
 
   const { workPriceItemId, craftsmanId } = opts ?? {}
-  if (!workPriceItemId || !craftsmanId) {
+  if (!workPriceItemId || !hasValidCraftsmanId(craftsmanId)) {
     progressList.value = []
     return
   }

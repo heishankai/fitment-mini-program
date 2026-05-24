@@ -108,8 +108,49 @@ const workPriceItemId = ref<number | string>('')
 const assignedCraftsmanId = ref<number | string>('')
 const orderId = ref<number | string>('')
 const orderType = ref<string>('') // gangmaster | 其他
+const workKindCode = ref<string>('')
+const workKindName = ref<string>('')
 const materialsList = ref<any>(null)
 const isTriggered = ref(false) // 下拉刷新状态
+
+const normalizeParam = (value: unknown): string => {
+  if (value == null) return ''
+  const text = String(value)
+  try {
+    return decodeURIComponent(text)
+  } catch {
+    return text
+  }
+}
+
+const hasValidCraftsmanId = (value: unknown): boolean => {
+  const text = normalizeParam(value)
+  return text !== '' && text !== 'null' && text !== 'undefined'
+}
+
+const filterMaterialsByWorkKind = (data: any): any => {
+  const list = data?.commodity_list
+  if (!Array.isArray(list)) return data
+
+  const code = normalizeParam(workKindCode.value)
+  const name = normalizeParam(workKindName.value)
+  if (!code && !name) return data
+
+  const commodity_list = list.filter((item: any) => {
+    if (code) return item?.work_kind_code === code
+    return item?.work_kind_name === name
+  })
+  const total_price = commodity_list.reduce(
+    (sum: number, item: any) => sum + (Number(item?.settlement_amount) || 0),
+    0,
+  )
+
+  return {
+    ...data,
+    commodity_list,
+    total_price: Number(total_price.toFixed(2)),
+  }
+}
 
 /** 辅材总数量 */
 const totalQuantity = computed(() => {
@@ -140,7 +181,7 @@ const getUnitPrice = (commodity: any): number => {
 
 /** 根据 orderType 调用对应接口获取辅材数据 */
 const fetchMaterials = async (): Promise<any> => {
-  if (orderType.value === 'gangmaster') {
+  if (orderType.value === 'gangmaster' && hasValidCraftsmanId(assignedCraftsmanId.value)) {
     if (!workPriceItemId.value || !assignedCraftsmanId.value) return null
     return getMaterialsByWorkPriceItemIdAndCraftsman(
       workPriceItemId.value,
@@ -156,7 +197,7 @@ const loadMaterials = async (): Promise<void> => {
   try {
     const res = await fetchMaterials()
     if (!res) return
-    materialsList.value = res?.data ?? res ?? null
+    materialsList.value = filterMaterialsByWorkKind(res?.data ?? res ?? null)
   } catch {
     materialsList.value = null
   }
@@ -327,6 +368,8 @@ onLoad((options = {}) => {
   assignedCraftsmanId.value = options.assignedCraftsmanId ?? ''
   orderId.value = options.orderId ?? ''
   orderType.value = options.orderType ?? ''
+  workKindCode.value = normalizeParam(options.workKindCode)
+  workKindName.value = normalizeParam(options.workKindName)
   loadMaterials()
 })
 </script>

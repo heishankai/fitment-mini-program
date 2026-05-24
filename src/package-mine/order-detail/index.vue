@@ -61,11 +61,13 @@ const loadOrderDetail = async (id: number | string): Promise<void> => {
   try {
     const { success, data } = await getOrderDetailService(id)
     if (!success) return
+    
     order_details.value = resolveCraftsmanNodeData(data) ?? {}
   } catch {
     sub_work_groups.value = []
   }
 }
+
 
 onLoad((options) => {
   const { id } = options ?? {}

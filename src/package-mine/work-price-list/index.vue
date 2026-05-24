@@ -24,9 +24,15 @@
           <view class="item-footer">
             <view class="subtotal">小计 ¥{{ getItemSubtotal(item) }}</view>
             <view class="actions">
-              <view class="btn-pay" v-if="!item?.is_paid" @tap="handlePay(item)">确认支付</view>
               <view
-                v-if="item?.is_paid"
+                class="btn-pay"
+                v-if="isActionableWorkPrice(item) && !item?.is_paid"
+                @tap="handlePay(item)"
+              >
+                确认支付
+              </view>
+              <view
+                v-if="isActionableWorkPrice(item) && item?.is_paid"
                 class="accept-btn"
                 :class="{ accepted: item?.is_accepted }"
                 @tap="handleAcceptWorkPrice(item)"
@@ -49,13 +55,17 @@
     </scroll-view>
 
     <!-- 底部汇总栏 -->
-    <view class="bottom-bar" v-if="work_price_list?.length">
-      <view class="bottom-bar-item" v-if="showBatchPay(work_price_list)" @tap="handleBatchPay">
+    <view class="bottom-bar" v-if="showActionBar">
+      <view
+        class="bottom-bar-item"
+        v-if="showBatchPay(actionable_work_price_list)"
+        @tap="handleBatchPay"
+      >
         一键支付
       </view>
       <view
         class="bottom-bar-item"
-        v-if="showBatchAccept(work_price_list)"
+        v-if="showBatchAccept(actionable_work_price_list)"
         @tap="handleBatchAccept"
       >
         一键验收
@@ -79,6 +89,86 @@ const params = ref<any>({})
 const work_price_list = ref<any>({})
 const isTriggered = ref(false)
 
+const normalizeParam = (value: unknown): string => {
+  if (value == null) return ''
+  const text = String(value)
+  try {
+    return decodeURIComponent(text)
+  } catch {
+    return text
+  }
+}
+
+const hasValidCraftsmanId = (value: unknown): boolean => {
+  const text = normalizeParam(value)
+  return text !== '' && text !== 'null' && text !== 'undefined'
+}
+
+const isActionableWorkPrice = (item: any): boolean => {
+  if (params.value?.order_type === ORDER_TYPE_ENUM.GANGMASTER) {
+    return hasValidCraftsmanId(item?.assigned_craftsman_id)
+  }
+  return true
+}
+
+const actionable_work_price_list = computed(() => {
+  const list = work_price_list.value
+  if (!Array.isArray(list)) return []
+  return list.filter(isActionableWorkPrice)
+})
+
+const showActionBar = computed(
+  () =>
+    showBatchPay(actionable_work_price_list.value) ||
+    showBatchAccept(actionable_work_price_list.value),
+)
+
+const parseWorkPriceItemIds = (value: unknown): number[] =>
+  normalizeParam(value)
+    .split(',')
+    .map((id) => Number(id))
+    .filter((id) => Number.isFinite(id))
+
+const filterWorkPriceListByNode = (list: any[], paramsValue: any): any[] => {
+  const ids = parseWorkPriceItemIds(paramsValue?.workPriceItemIds)
+  if (ids.length > 0) {
+    const idSet = new Set(ids)
+    return list.filter((item) => idSet.has(Number(item?.id)))
+  }
+
+  const workKindCode = normalizeParam(paramsValue?.workKindCode)
+  if (workKindCode) {
+    return list.filter((item) => item?.work_kind_code === workKindCode)
+  }
+
+  const workKindName = normalizeParam(paramsValue?.workKindName)
+  if (workKindName) {
+    return list.filter((item) => item?.work_kind_name === workKindName)
+  }
+
+  const workPriceItemId = Number(paramsValue?.workPriceItemId)
+  if (Number.isFinite(workPriceItemId)) {
+    return list.filter((item) => Number(item?.id) === workPriceItemId)
+  }
+
+  return list
+}
+
+const loadWorkPriceListByOrderId = async (
+  orderId: number | string,
+  paramsValue: any,
+): Promise<void> => {
+  if (!orderId) {
+    work_price_list.value = []
+    return
+  }
+  const { success, data } = await getWorkPriceListByOrderId(orderId)
+  if (!success) return
+  const { main_work_price_group, sub_work_price_groups } = data ?? {}
+  const list = flattenWorkPriceList(main_work_price_group, sub_work_price_groups)
+  work_price_list.value = filterWorkPriceListByNode(list, paramsValue)
+}
+
 const onRefresherrefresh = async (): Promise<void> => {
   isTriggered.value = true
   await loadWorkPriceList(params?.value)
@@ -90,11 +180,12 @@ const loadWorkPriceList = async (paramsValue): Promise<void> => {
   const { orderId, workPriceItemId, craftsmanId, order_type } = paramsValue ?? {}
 
   if (order_type === ORDER_TYPE_ENUM.CRAFTSMAN) {
-    const { success, data } = await getWorkPriceListByOrderId(orderId)
-    if (!success) return
-    console.log(data, '工匠单')
-    const { main_work_price_group, sub_work_price_groups } = data ?? {}
-    work_price_list.value = flattenWorkPriceList(main_work_price_group, sub_work_price_groups)
+    await loadWorkPriceListByOrderId(orderId, paramsValue)
+    return
+  }
+
+  if (!hasValidCraftsmanId(craftsmanId)) {
+    await loadWorkPriceListByOrderId(orderId, paramsValue)
     return
   }
 
@@ -106,7 +197,7 @@ const loadWorkPriceList = async (paramsValue): Promise<void> => {
 
 /** 单项支付 */
 const handlePay = (item: any): void => {
-  if (item?.is_paid) return
+  if (item?.is_paid || !isActionableWorkPrice(item)) return
   uni?.vibrateShort()
   wx.showModal({
     title: '确认支付',
@@ -143,7 +234,7 @@ const handlePay = (item: any): void => {
 /** 一键支付：批量支付全部未支付的工价 */
 const handleBatchPay = async (): Promise<void> => {
   uni?.vibrateShort()
-  const list = work_price_list.value
+  const list = actionable_work_price_list.value
   if (!list?.length) {
     uni.showToast({ title: '工价信息错误', icon: 'none' })
     return
@@ -192,7 +283,7 @@ const handleBatchPay = async (): Promise<void> => {
 /** 一键验收：批量验收全部 已支付未验收 的工价 */
 const handleBatchAccept = async (): Promise<void> => {
   uni?.vibrateShort()
-  const list = work_price_list.value
+  const list = actionable_work_price_list.value
 
   if (!list?.length) {
     uni.showToast({ title: '工价信息错误', icon: 'none' })
@@ -227,7 +318,7 @@ const handleBatchAccept = async (): Promise<void> => {
 
 // 单项验收
 const handleAcceptWorkPrice = async (item: any): Promise<void> => {
-  if (item?.is_accepted) return
+  if (item?.is_accepted || !isActionableWorkPrice(item)) return
   wx.showModal({
     title: '确认验收',
     content: '确定要验收此项工价吗？',

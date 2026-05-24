@@ -63,7 +63,7 @@ importers:
         specifier: ^1.11.19
         version: 1.11.19
       decimal.js:
-        specifier: ^10.4.3
+        specifier: ^10.6.0
         version: 10.6.0
       pinia:
         specifier: 2.0.27

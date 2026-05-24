@@ -5,7 +5,7 @@
         v-for="(item, i) in order_details?.construction_nodes"
         :key="item?.id ?? i"
         :completed="true"
-        :title="`${item?.work_kind_name}施工`"
+        :title="`${item?.work_kind_name || '工价'}施工`"
         :is-last="i === order_details?.construction_nodes?.length - 1"
       >
         <view class="cell-wrap">
@@ -37,6 +37,56 @@ const props = defineProps<{
   order_details: any
 }>()
 
+const hasAssignedCraftsman = (item: any): boolean => {
+  const cid = item?.assigned_craftsman_id
+  return cid != null && cid !== '' && cid !== 'null' && cid !== 'undefined'
+}
+
+const appendQuery = (
+  params: string[],
+  key: string,
+  value: number | string | null | undefined,
+): void => {
+  if (value == null || value === '' || value === 'null' || value === 'undefined') return
+  params.push(`${key}=${encodeURIComponent(String(value))}`)
+}
+
+const buildWorkPriceListUrl = (item: any): string => {
+  const { order_type, id } = props?.order_details ?? {}
+  const params: string[] = []
+  appendQuery(params, 'orderId', id)
+  appendQuery(params, 'order_type', order_type)
+
+  if (order_type === ORDER_TYPE_ENUM.CRAFTSMAN) {
+    return `/package-mine/work-price-list/index?${params.join('&')}`
+  }
+
+  if (hasAssignedCraftsman(item)) {
+    appendQuery(params, 'workPriceItemId', item?.id)
+    appendQuery(params, 'craftsmanId', item?.assigned_craftsman_id)
+    return `/package-mine/work-price-list/index?${params.join('&')}`
+  }
+
+  if (Array.isArray(item?.work_price_item_ids) && item.work_price_item_ids.length > 0) {
+    appendQuery(params, 'workPriceItemIds', item.work_price_item_ids.join(','))
+  } else {
+    appendQuery(params, 'workPriceItemId', item?.id)
+  }
+  appendQuery(params, 'workKindCode', item?.work_kind_code)
+  appendQuery(params, 'workKindName', item?.work_kind_name)
+  return `/package-mine/work-price-list/index?${params.join('&')}`
+}
+
+const buildNodeOrderUrl = (path: string, item: any): string => {
+  const { order_type, id } = props?.order_details ?? {}
+  const params: string[] = []
+  appendQuery(params, 'orderId', id)
+  appendQuery(params, 'orderType', order_type)
+  appendQuery(params, 'workKindCode', item?.work_kind_code)
+  appendQuery(params, 'workKindName', item?.work_kind_name)
+  return `${path}?${params.join('&')}`
+}
+
 // 跳转辅材清单页面
 const handleMaterials = (item: any): void => {
   const { order_type, id } = props?.order_details ?? {}
@@ -44,6 +94,13 @@ const handleMaterials = (item: any): void => {
   if (order_type === ORDER_TYPE_ENUM.CRAFTSMAN) {
     uni.navigateTo({
       url: `/package-mine/work-price-materials/index?orderId=${id}&orderType=${order_type}`,
+    })
+    return
+  }
+
+  if (!hasAssignedCraftsman(item)) {
+    uni.navigateTo({
+      url: buildNodeOrderUrl('/package-mine/work-price-materials/index', item),
     })
     return
   }
@@ -64,6 +121,13 @@ const handleConstructionProgress = (item: any): void => {
     return
   }
 
+  if (!hasAssignedCraftsman(item)) {
+    uni.navigateTo({
+      url: buildNodeOrderUrl('/package-mine/construction-progress/index', item),
+    })
+    return
+  }
+
   uni.navigateTo({
     url: `/package-mine/construction-progress/index?workPriceItemId=${item?.id}&craftsmanId=${item?.assigned_craftsman_id}`,
   })
@@ -71,18 +135,8 @@ const handleConstructionProgress = (item: any): void => {
 
 // 跳转工价清单页面
 const handleWorkPriceList = (item: any): void => {
-  // console.log(item, 'item')
-  const { order_type, id } = props?.order_details ?? {}
-
-  if (order_type === ORDER_TYPE_ENUM.CRAFTSMAN) {
-    uni.navigateTo({
-      url: `/package-mine/work-price-list/index?orderId=${id}&order_type=${order_type}`,
-    })
-    return
-  }
-
   uni.navigateTo({
-    url: `/package-mine/work-price-list/index?orderId=${id}&workPriceItemId=${item?.id}&craftsmanId=${item?.assigned_craftsman_id}&order_type=${order_type}`,
+    url: buildWorkPriceListUrl(item),
   })
 }
 </script>

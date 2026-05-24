@@ -1,7 +1,7 @@
 <template>
   <view class="project-overview">
     <view class="title">项目概览</view>
-    <view class="type">{{ `${order_details?.houseType} ${order_details?.area}m²` }}</view>
+    <view class="type">{{ `${order_details?.housing_name} ${order_details?.area}m²` }}</view>
 
     <view class="address">
       <uni-icons custom-prefix="iconfont" type="icon-map" size="14" color="#999" />
@@ -86,27 +86,38 @@ const handleGoCraftsmanProfile = (): void => {
 }
 
 .type {
+  max-width: 100%;
   margin-top: 12px;
   color: #222;
   font-size: 32px;
   font-weight: 700;
   line-height: 40px;
   letter-spacing: -1.194px;
+  white-space: normal;
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 .address,
 .start-time {
   margin-top: 12px;
+  display: flex;
+  align-items: flex-start;
 
   .address-text,
   .start-time-text {
     margin-left: 12px;
+    flex: 1;
+    min-width: 0;
 
     color: #666;
     font-size: 14px;
     font-weight: 300;
     line-height: 21px;
     letter-spacing: 0.2px;
+    white-space: normal;
+    word-break: break-all;
+    overflow-wrap: break-word;
   }
 }
 

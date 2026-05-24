@@ -72,43 +72,70 @@ const hasAssignedCraftsman = (item: any): boolean => {
   return cid != null && cid !== ''
 }
 
+const getWorkKindKey = (item: any): string => {
+  const key = item?.work_kind_code ?? item?.work_kind_name ?? item?.id
+  return key == null ? '' : String(key)
+}
+
+const getWorkPriceItemIds = (items: any[]): number[] =>
+  items.map((item) => Number(item?.id)).filter((id) => Number.isFinite(id))
+
+const buildConstructionNode = (items: any[]): any => {
+  const first = items[0]
+  return {
+    ...first,
+    work_price_item_ids: getWorkPriceItemIds(items),
+  }
+}
+
+/** 工长单：已分配按工匠去重；未分配按工种去重（parent 组可能多条对应同一施工节点） */
+const buildGangmasterConstructionNodes = (groups: any[]): any[] => {
+  const groupMap = new Map<string, any[]>()
+
+  for (const item of groups) {
+    const kindKey = getWorkKindKey(item)
+    if (!kindKey) continue
+    const groupKey = hasAssignedCraftsman(item)
+      ? `craftsman:${item.assigned_craftsman_id}`
+      : `kind:${kindKey}`
+    const items = groupMap.get(groupKey) ?? []
+    items.push(item)
+    groupMap.set(groupKey, items)
+  }
+
+  return Array.from(groupMap.values()).map(buildConstructionNode)
+}
+
+/** 工匠单：整单一个施工节点（工价/辅材/进度均按订单维度跳转） */
+const buildCraftsmanConstructionNodes = (groups: any[], orderDetail: any): any[] => {
+  if (groups.length > 0) return [buildConstructionNode(groups)]
+  const { work_kind_name, id } = orderDetail ?? {}
+  if (work_kind_name) return [{ id, work_kind_name }]
+  return []
+}
+
 /**
- * 转为施工节点数据
- * @param orderDetail 订单详情
- * @param order_type 订单类型：工长订单:gangmaster , 工匠订单:craftsman
- * 1. 未分配工匠的工价不产生施工节点
- * 2. 工匠订单：仅首条工价且已分配工匠时有一个施工节点
- * 3. 工长订单：按 assigned_craftsman_id 去重，同一工匠多条工价合并为一个节点
+ * parent_work_price_groups 为工价分组；施工节点需聚合后展示：
+ * - 工匠单：1 个节点
+ * - 工长单：已分配工匠各 1 个节点；未分配按工种各 1 个节点
  */
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const resolveCraftsmanNodeData = (orderDetail: any): any => {
   const { parent_work_price_groups, order_type, ...rest } = orderDetail ?? {}
-  const groups = parent_work_price_groups ?? []
+  const groups = Array.isArray(parent_work_price_groups) ? parent_work_price_groups : []
 
-  const seen = new Set<unknown>()
-  const construction_gangmaster_nodes = groups.filter((item: any) => {
-    if (!hasAssignedCraftsman(item)) return false
-    const id = item?.assigned_craftsman_id
-    if (seen.has(id)) return false
-    seen.add(id)
-    return true
-  })
-
-  const first = groups[0]
-  const construction_nodes_craftsman =
-    first && hasAssignedCraftsman(first) ? [first] : []
+  const construction_nodes =
+    order_type === ORDER_TYPE_ENUM.CRAFTSMAN
+      ? buildCraftsmanConstructionNodes(groups, orderDetail)
+      : buildGangmasterConstructionNodes(groups)
 
   return {
     ...rest,
     order_type,
-    construction_nodes:
-      order_type === ORDER_TYPE_ENUM.CRAFTSMAN
-        ? construction_nodes_craftsman
-        : construction_gangmaster_nodes,
-    parent_work_price_groups,
+    construction_nodes,
+    parent_work_price_groups: groups,
   }
 }
-
 
 /** 子工单：所有 sub_work_price_groups 行上 total_service_fee 合计（展示用，保留 2 位小数） */
 export const sumSubWorkPriceGroupsLineServiceFee = (
