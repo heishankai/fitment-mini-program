@@ -49,13 +49,13 @@
                 <uni-icons
                   type="checkmarkempty"
                   size="13"
-                  :color="commodity.is_accepted ? '#2d635e' : '#909399'"
+                  :color="commodity.is_accepted ? STATUS_COMPLETED_COLOR : STATUS_PENDING_COLOR"
                 />
                 <text>{{ commodity.is_accepted ? '已验收' : '待验收' }}</text>
               </view>
 
               <view v-else class="accept-status unpaid">
-                <uni-icons type="wallet" size="13" color="#909399" />
+                <uni-icons type="wallet" size="13" :color="STATUS_PENDING_COLOR" />
                 <text>待支付</text>
               </view>
             </view>
@@ -76,6 +76,10 @@
       <view class="summary-row total-row">
         <text class="total-label">总价</text>
         <text class="total-price">¥{{ formatCost(materialsList?.total_price || 0) }}</text>
+      </view>
+      <view v-if="hasUnpaidMaterials" class="summary-row unpaid-row">
+        <text class="unpaid-label">待支付合计</text>
+        <text class="unpaid-price">¥{{ formatCost(unpaidTotalAmount) }}</text>
       </view>
       <button v-if="hasUnpaidMaterials" class="batch-accept-btn" @tap="handleBatchPay">
         <uni-icons type="checkbox" size="18" color="#fff" />
@@ -103,6 +107,9 @@ import {
 import { formatCost, previewImage } from '@/utils'
 
 import { getPayParamsService } from './service'
+
+const STATUS_PENDING_COLOR = '#e6a23c'
+const STATUS_COMPLETED_COLOR = '#2d635e'
 
 // 页面参数
 const workPriceItemId = ref<number | string>('')
@@ -166,6 +173,15 @@ const totalQuantity = computed(() => {
 const hasUnpaidMaterials = computed(() => {
   if (!materialsList.value?.commodity_list) return false
   return materialsList.value.commodity_list?.some((c: any) => !c.is_paid)
+})
+
+/** 待支付合计金额 */
+const unpaidTotalAmount = computed(() => {
+  if (!materialsList.value?.commodity_list) return 0
+  const total = materialsList.value.commodity_list
+    .filter((c: any) => !c.is_paid)
+    .reduce((sum: number, c: any) => sum + (Number(c.settlement_amount) || 0), 0)
+  return Number(total.toFixed(2))
 })
 
 /** 是否存在未验收的辅材（仅全部已支付时有效） */
@@ -425,17 +441,12 @@ page {
           font-size: 24rpx;
           padding: 12rpx 24rpx;
           border-radius: 16rpx;
-          color: #909399;
-          background: #f5f7fa;
+          color: #e6a23c;
+          background: #fdf6ec;
 
           &.accepted {
-            color: $uni-color-success;
+            color: #2d635e;
             background: #edf7f2;
-          }
-
-          &.unpaid {
-            color: #909399;
-            background: #f5f7fa;
           }
         }
       }
@@ -471,6 +482,22 @@ page {
         font-size: 40rpx;
         font-weight: 700;
         color: $uni-color-primary;
+      }
+    }
+
+    &.unpaid-row {
+      margin-bottom: 24rpx;
+
+      .unpaid-label {
+        font-size: 28rpx;
+        font-weight: 500;
+        color: $uni-text-color;
+      }
+
+      .unpaid-price {
+        font-size: 36rpx;
+        font-weight: 700;
+        color: #e6a23c;
       }
     }
 

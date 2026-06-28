@@ -3,14 +3,14 @@
 </template>
 
 <script setup lang="ts">
-import { WEBVIEWURL } from '@/utils/request'
+import { buildWebViewUrl } from '@/utils/webview'
 
 const webViewUrl = ref<string>('')
 
 onLoad(() => {
   const token = wx.getStorageSync('userInfo')?.token
   if (token) {
-    webViewUrl.value = `${WEBVIEWURL}/admin-service/wechat-msg?token=${token}`
+    webViewUrl.value = buildWebViewUrl(`/admin-service/wechat-msg?token=${token}`)
   } else {
     wx.navigateTo({ url: '/pages/login/index' })
   }

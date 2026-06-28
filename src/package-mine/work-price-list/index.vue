@@ -10,35 +10,37 @@
     >
       <!-- 工价列表 -->
       <view v-if="work_price_list?.length" class="work-price-list">
-        <view class="summary-card">
-          <view class="summary-label">工价合计</view>
-          <view class="summary-value">¥{{ work_price_total }}</view>
-        </view>
         <view v-for="item in work_price_list" :key="item?.id" class="item-card">
-          <view class="item-header">
-            <view class="work-title" @tap.stop="goWorkPriceDetail(item)">
-              <text class="work-title-text">{{ item?.work_title }}</text>
-              <view class="work-title-icon">
-                <uni-icons type="right" size="14" color="#2d635e" />
-              </view>
-            </view>
-            <view class="unit-price">¥{{ item?.work_price }}/{{ item?.labour_cost_name }}</view>
+          <view class="item-name-row" @tap.stop="goWorkPriceDetail(item)">
+            <text class="item-name">{{ item?.work_title }}</text>
+            <uni-icons type="right" size="14" color="#b8b8b8" />
           </view>
-          <view class="item-content">
-            <text class="spec">{{ item?.quantity }} {{ item?.labour_cost_name }}</text>
-            <view v-if="item?.is_set_minimum_price === '1'" class="min-price-tag">
-              起步价 ¥{{ item?.minimum_price }}
-            </view>
+          <text class="item-meta">
+            ¥{{ item?.work_price }}/{{ item?.labour_cost_name }} × {{ item?.quantity }}
+            {{ item?.labour_cost_name }}
+          </text>
+          <view v-if="item?.is_set_minimum_price === '1'" class="min-price-tag">
+            起步价 ¥{{ item?.minimum_price }}
           </view>
           <view class="item-footer">
-            <view class="subtotal">小计 ¥{{ getItemSubtotal(item) }}</view>
-            <view class="status-group">
-              <view class="status-tag" :class="{ active: item?.is_paid }">
-                {{ item?.is_paid ? '已支付' : '未支付' }}
-              </view>
-              <view class="status-tag" :class="{ active: item?.is_accepted }">
-                {{ item?.is_accepted ? '已验收' : '未验收' }}
-              </view>
+            <text class="item-subtotal">¥{{ getItemSubtotal(item) }}</text>
+
+            <view
+              v-if="item?.is_paid"
+              class="accept-status"
+              :class="{ accepted: item?.is_accepted }"
+            >
+              <uni-icons
+                type="checkmarkempty"
+                size="13"
+                :color="item?.is_accepted ? STATUS_COMPLETED_COLOR : STATUS_PENDING_COLOR"
+              />
+              <text>{{ item?.is_accepted ? '已验收' : '待验收' }}</text>
+            </view>
+
+            <view v-else class="accept-status">
+              <uni-icons type="wallet" size="13" :color="STATUS_PENDING_COLOR" />
+              <text>待支付</text>
             </view>
           </view>
         </view>
@@ -49,23 +51,31 @@
     </scroll-view>
 
     <!-- 底部汇总栏 -->
-    <view class="bottom-bar" v-if="showActionBar">
-      <view
-        class="bottom-bar-item"
-        v-if="showBatchPay(work_price_list)"
-        @tap="handleBatchPay"
-      >
-        <uni-icons type="wallet" size="20" color="#fff" />
-        <text>一键支付</text>
+    <view v-if="work_price_list?.length" class="bottom-bar">
+      <view class="summary-row">
+        <text class="summary-label">工价合计</text>
+        <text class="summary-count">共 {{ work_price_list.length }} 项</text>
       </view>
-      <view
-        class="bottom-bar-item"
-        v-if="showBatchAccept(work_price_list)"
+      <view class="summary-row total-row">
+        <text class="total-label">总价</text>
+        <text class="total-price">¥{{ work_price_total }}</text>
+      </view>
+      <view v-if="showBatchPay(work_price_list)" class="summary-row unpaid-row">
+        <text class="unpaid-label">待支付合计</text>
+        <text class="unpaid-price">¥{{ unpaidTotalAmount }}</text>
+      </view>
+      <button v-if="showBatchPay(work_price_list)" class="batch-action-btn" @tap="handleBatchPay">
+        <uni-icons type="checkbox" size="18" color="#fff" />
+        <text>全部支付</text>
+      </button>
+      <button
+        v-else-if="showBatchAccept(work_price_list)"
+        class="batch-action-btn"
         @tap="handleBatchAccept"
       >
-        <uni-icons type="checkmarkempty" size="20" color="#fff" />
-        <text>一键验收</text>
-      </view>
+        <uni-icons type="checkbox" size="18" color="#fff" />
+        <text>全部验收</text>
+      </button>
     </view>
   </view>
 </template>
@@ -80,6 +90,9 @@ import {
   acceptOrderWorkPriceBatchService,
 } from './service'
 import { getItemSubtotal, showBatchPay, showBatchAccept, flattenWorkPriceList } from './utils'
+
+const STATUS_PENDING_COLOR = '#e6a23c'
+const STATUS_COMPLETED_COLOR = '#2d635e'
 
 const params = ref<any>({})
 const work_price_list = ref<any[]>([])
@@ -100,15 +113,20 @@ const hasValidCraftsmanId = (value: unknown): boolean => {
   return text !== '' && text !== 'null' && text !== 'undefined'
 }
 
-const showActionBar = computed(
-  () =>
-    showBatchPay(work_price_list.value) ||
-    showBatchAccept(work_price_list.value),
-)
-
 const work_price_total = computed(() => {
   return work_price_list.value
     .reduce((sum, item) => sum.plus(getItemSubtotal(item)), new Decimal(0))
+    .toFixed(2)
+})
+
+const unpaidTotalAmount = computed(() => {
+  return work_price_list.value
+    .filter((item) => !item?.is_paid)
+    .reduce(
+      (sum, item) =>
+        sum.plus(new Decimal(Number(item?.settlement_amount) || getItemSubtotal(item) || 0)),
+      new Decimal(0),
+    )
     .toFixed(2)
 })
 
@@ -176,7 +194,6 @@ const onRefresherrefresh = async (): Promise<void> => {
   isTriggered.value = false
 }
 
-// 加载工价列表
 const loadWorkPriceList = async (paramsValue): Promise<void> => {
   const { orderId, workPriceItemId, craftsmanId, order_type } = paramsValue ?? {}
 
@@ -196,7 +213,6 @@ const loadWorkPriceList = async (paramsValue): Promise<void> => {
   work_price_list.value = flattenWorkPriceList(main_work_price_group, sub_work_price_groups)
 }
 
-/** 一键支付：批量支付全部未支付的工价 */
 const handleBatchPay = async (): Promise<void> => {
   uni?.vibrateShort()
   const list = work_price_list.value
@@ -245,7 +261,6 @@ const handleBatchPay = async (): Promise<void> => {
   })
 }
 
-/** 一键验收：批量验收全部 已支付未验收 的工价 */
 const handleBatchAccept = async (): Promise<void> => {
   uni?.vibrateShort()
   const list = work_price_list.value
@@ -288,7 +303,6 @@ onLoad((options) => {
 </script>
 
 <style lang="scss">
-/* 页面容器 */
 page {
   height: 100%;
   overflow: hidden;
@@ -307,165 +321,155 @@ page {
 }
 
 .work-price-list {
-  padding: 24rpx;
+  padding: 16rpx;
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
-}
+  gap: 16rpx;
 
-.summary-card {
-  padding: 28rpx;
-  background: linear-gradient(135deg, #2d635e 0%, #3f7c75 100%);
-  border-radius: $uni-border-radius-base;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 8rpx 24rpx rgba(45, 99, 94, 0.18);
-
-  .summary-label {
-    color: rgba(255, 255, 255, 0.86);
-    font-size: 26rpx;
-    font-weight: 500;
-  }
-
-  .summary-value {
-    color: #fff;
-    font-size: 38rpx;
-    font-weight: 700;
-  }
-}
-
-.item-card {
-  padding: 28rpx;
-  background: $uni-bg-color;
-  border-radius: $uni-border-radius-base;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
-  border: 1rpx solid $uni-border-color;
-
-  .item-header {
+  .item-card {
+    padding: 32rpx;
+    background: $uni-bg-color;
+    border-radius: $uni-border-radius-base;
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 16rpx;
+    flex-direction: column;
+    gap: 16rpx;
 
-    .work-title {
-      flex: 1;
-      color: $uni-text-color;
-      font-size: 30rpx;
-      font-weight: 600;
-      line-height: 1.4;
-      position: relative;
-      padding-right: 34rpx;
+    .item-name-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8rpx;
       min-width: 0;
 
-      .work-title-text {
-        word-break: break-all;
-      }
-
-      .work-title-icon {
-        position: absolute;
-        right: 0;
-        top: 7rpx;
-        width: 28rpx;
-        height: 28rpx;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      .item-name {
+        flex: 1;
+        min-width: 0;
+        font-size: 36rpx;
+        font-weight: 600;
+        color: $uni-text-color;
+        line-height: 1.4;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
       }
     }
 
-    .unit-price {
-      flex-shrink: 0;
-      margin-left: 16rpx;
-      color: $uni-color-primary;
-      font-size: 26rpx;
-      font-weight: 500;
-    }
-  }
-
-  .item-content {
-    margin-bottom: 20rpx;
-    display: flex;
-    align-items: center;
-    gap: 16rpx;
-    flex-wrap: wrap;
-
-    .spec {
+    .item-meta {
+      font-size: 28rpx;
       color: $uni-text-color-grey;
-      font-size: 24rpx;
     }
 
     .min-price-tag {
+      align-self: flex-start;
       padding: 4rpx 12rpx;
       background: $uni-bg-color-grey;
       border-radius: $uni-border-radius-sm;
       color: $uni-text-color-grey;
       font-size: 22rpx;
     }
-  }
 
-  .item-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 20rpx;
-    border-top: 1rpx solid $uni-border-color;
-
-    .subtotal {
-      color: $uni-text-color;
-      font-size: 28rpx;
-      font-weight: 600;
-    }
-
-    .status-group {
+    .item-footer {
       display: flex;
-      gap: 12rpx;
-      flex-wrap: wrap;
-    }
+      align-items: center;
+      justify-content: space-between;
 
-    .status-tag {
-      padding: 8rpx 18rpx;
-      border-radius: 999rpx;
-      background: $uni-bg-color-grey;
-      color: $uni-text-color-grey;
-      font-size: 24rpx;
-      font-weight: 500;
+      .item-subtotal {
+        font-size: 36rpx;
+        font-weight: 600;
+        color: $uni-color-primary;
+      }
 
-      &.active {
-        background: rgba(7, 193, 96, 0.1);
-        color: $uni-color-success;
+      .accept-status {
+        display: flex;
+        align-items: center;
+        gap: 8rpx;
+        font-size: 24rpx;
+        padding: 12rpx 24rpx;
+        border-radius: 16rpx;
+        color: #e6a23c;
+        background: #fdf6ec;
+
+        &.accepted {
+          color: #2d635e;
+          background: #edf7f2;
+        }
       }
     }
   }
 }
 
 .bottom-bar {
-  padding: 12px;
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
-  background: #fff;
-  border-top: 2rpx solid #f0f0f0;
+  flex-shrink: 0;
+  background: $uni-bg-color;
+  border-top: 2rpx solid $uni-border-color;
+  padding: 24rpx 32rpx;
+  padding-bottom: max(24rpx, env(safe-area-inset-bottom));
   box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
-}
 
-.bottom-bar-item {
-  padding: 16px;
-  display: flex;
-  padding-right: 0;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
+  .summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16rpx;
 
-  border-radius: 14px;
-  background: #2d635e;
-  box-shadow:
-    0 20px 25px -5px rgba(45, 99, 94, 0.2),
-    0 8px 10px -6px rgba(45, 99, 94, 0.2);
+    &.total-row {
+      margin-bottom: 24rpx;
 
-  color: #fff;
-  text-align: center;
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 24px;
-  letter-spacing: -0.312px;
+      .total-label {
+        font-size: 30rpx;
+        font-weight: 600;
+        color: $uni-text-color;
+      }
+
+      .total-price {
+        font-size: 40rpx;
+        font-weight: 700;
+        color: $uni-color-primary;
+      }
+    }
+
+    &.unpaid-row {
+      margin-bottom: 24rpx;
+
+      .unpaid-label {
+        font-size: 28rpx;
+        font-weight: 500;
+        color: $uni-text-color;
+      }
+
+      .unpaid-price {
+        font-size: 36rpx;
+        font-weight: 700;
+        color: #e6a23c;
+      }
+    }
+
+    .summary-label {
+      font-size: 28rpx;
+      color: $uni-text-color-grey;
+    }
+
+    .summary-count {
+      font-size: 24rpx;
+      color: $uni-text-color-placeholder;
+    }
+  }
+
+  .batch-action-btn {
+    width: 100%;
+    padding: 12rpx;
+    border-radius: 24rpx;
+    font-size: 32rpx;
+    font-weight: 600;
+    color: #fff;
+    background: $uni-color-primary;
+
+    text {
+      margin-left: 8rpx;
+    }
+  }
 }
 </style>

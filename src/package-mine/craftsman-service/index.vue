@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { onLoad } from '@dcloudio/uni-app'
-import { WEBVIEWURL } from '@/utils/request'
+import { buildWebViewUrl } from '@/utils/webview'
 
 const webViewUrl = ref<string>('')
 
@@ -30,7 +30,7 @@ onLoad((options) => {
   if (craftsmanUserId) params.push(`craftsmanUserId=${craftsmanUserId}`)
   if (craftsmanUserName) params.push(`craftsmanUserName=${craftsmanUserName}`)
 
-  webViewUrl.value = `${WEBVIEWURL}/chat/wechat/${room_id}?${params.join('&')}`
+  webViewUrl.value = buildWebViewUrl(`/chat/wechat/${room_id}?${params.join('&')}`)
 })
 </script>
 

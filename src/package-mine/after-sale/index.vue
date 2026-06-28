@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { WEBVIEWURL } from '@/utils/request'
+import { buildWebViewUrl } from '@/utils/webview'
 
 const webViewUrl = ref<string>('')
 
@@ -11,7 +11,7 @@ onLoad(() => {
   const token = wx.getStorageSync('userInfo')?.token
   if (token) {
     // 售后页面使用与客服相同的入口，可通过 type 参数区分
-    webViewUrl.value = `${WEBVIEWURL}/admin-service/wechat-msg?token=${token}&type=after_sale`
+    webViewUrl.value = buildWebViewUrl(`/admin-service/wechat-msg?token=${token}&type=after_sale`)
   } else {
     wx.navigateTo({ url: '/pages/login/index' })
   }

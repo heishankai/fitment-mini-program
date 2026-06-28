@@ -36,7 +36,7 @@
         <view v-else class="pay-btn" @tap="handlePayServiceFee(row)">支付</view>
       </view>
     </view>
-    <template v-if="order_details?.order_type === 'gangmaster'">
+    <template v-if="gangmasterCostRows.length">
       <view
         v-for="(row, idx) in gangmasterCostRows"
         :key="'gangmaster-fee-' + idx"
@@ -98,22 +98,33 @@ const platformServiceFeeRows = computed((): FeeRow[] => {
   ]
 })
 
-/** 工长费用：以后端 gangmaster_cost_details 为准 */
+const isPositiveFeeAmount = (amount: number | string | null | undefined): boolean =>
+  Number(amount) > 0
+
+/** 工长费用：以后端 gangmaster_cost_details 为准；金额为 0 的不展示 */
 const gangmasterCostRows = computed((): FeeRow[] => {
   const d = props.order_details ?? {}
+  if (d.order_type !== 'gangmaster') return []
+
   const details = d.gangmaster_cost_details as
     | { index: number; amount: number | string; is_paid: boolean }[]
     | undefined
   if (Array.isArray(details) && details.length > 0) {
-    return sortFeeDetailsByIndex(details).map((item) => ({
-      amount: item.amount ?? 0,
-      is_paid: !!item.is_paid,
-      fee_indexes: [Number(item.index)],
-    }))
+    return sortFeeDetailsByIndex(details)
+      .map((item) => ({
+        amount: item.amount ?? 0,
+        is_paid: !!item.is_paid,
+        fee_indexes: [Number(item.index)],
+      }))
+      .filter((row) => isPositiveFeeAmount(row.amount))
   }
+
+  const amount = d.gangmaster_cost ?? 0
+  if (!isPositiveFeeAmount(amount)) return []
+
   return [
     {
-      amount: d.gangmaster_cost ?? 0,
+      amount,
       is_paid: !!d.gangmaster_cost_is_paid,
     },
   ]
