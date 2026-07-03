@@ -3,7 +3,7 @@
     <view class="card-top">
       <text class="card-name">{{ item?.work_title }}</text>
 
-      <view class="card-price-wrap">
+      <view class="card-price-wrap" v-if="item?.is_show_price">
         <view class="price-row">
           <text class="price-symbol">¥</text>
           <text class="price-num">{{ item?.work_price }}</text>
@@ -45,6 +45,7 @@ interface LaborPriceItem {
   }
   pricing_description: string
   service_scope: string
+  is_show_price: boolean
 }
 
 defineProps<{
