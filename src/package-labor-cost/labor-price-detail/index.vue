@@ -28,7 +28,7 @@
       <view v-if="orderDetail" class="content-inner">
         <!-- 价格卡片 -->
         <view class="price-section">
-          <view class="price-left">
+          <view class="price-left" v-if="orderDetail?.is_show_price">
             <text class="price-label">平台指导价</text>
             <view class="price-row">
               <text class="price-symbol">¥</text>
